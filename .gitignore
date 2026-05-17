@@ -1,0 +1,31 @@
+# Environment variables — never commit secrets
+.env
+.env.*
+!.env.example
+
+# Build output
+**/bin/
+**/obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Rider
+.idea/
+
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+
+# EF migrations metadata
+**/Migrations/**/*/
+
+# Uploaded files
+uploads/
+
+# OS
+.DS_Store
+Thumbs.db
