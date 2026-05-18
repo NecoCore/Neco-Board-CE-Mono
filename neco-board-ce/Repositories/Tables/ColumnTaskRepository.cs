@@ -3,6 +3,7 @@ using neco_board_ce.Data;
 using neco_board_ce.Interfaces;
 using neco_board_ce.Models.Entity;
 using neco_board_ce.Models.Enums;
+using neco_board_ce.Models.Results;
 
 namespace neco_board_ce.Repositories.Tables
 {
@@ -17,56 +18,93 @@ namespace neco_board_ce.Repositories.Tables
             _logger = logger;
         }
 
-        public async Task<List<ColumnTask>> GetAll()
+        public async Task<RepositoryResult<List<ColumnTask>>> GetAll()
         {
             _logger.LogDebug("Fetching all tasks from the database.");
-            return await _db.ColumnTasks.Include(t => t.Owner).ToListAsync();
+            try
+            {
+                var tasks = await _db.ColumnTasks.Include(t => t.Owner).ToListAsync();
+                return new RepositoryResult<List<ColumnTask>> { Success = true, Data = tasks };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while fetching tasks from the database.");
+                return new RepositoryResult<List<ColumnTask>> { Success = false, Message = "An error occurred while fetching tasks." };
+            }
         }
 
-        public async Task<ColumnTask?> GetById(string id)
+        public async Task<RepositoryResult<ColumnTask?>> GetById(string id)
         {
             _logger.LogDebug("Fetching task with ID: {Id} from the database.", id);
-            return await _db.ColumnTasks
-                .Include(t => t.Owner)
-                .Include(t => t.Users).ThenInclude(u => u.User)
-                .Include(t => t.Images)
-                .Include(t => t.Attachments)
-                .FirstOrDefaultAsync(t => t.Id == id);
+            try
+            {
+                var task = await _db.ColumnTasks
+                    .Include(t => t.Owner)
+                    .Include(t => t.Users).ThenInclude(u => u.User)
+                    .Include(t => t.Images)
+                    .Include(t => t.Attachments)
+                    .FirstOrDefaultAsync(t => t.Id == id);
+                return new RepositoryResult<ColumnTask?> { Success = true, Data = task };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while fetching task with ID: {Id} from the database.", id);
+                return new RepositoryResult<ColumnTask?> { Success = false, Message = "An error occurred while fetching task." };
+            }
         }
 
-        public async Task<string?> GetProjectById(string id)
+        public async Task<RepositoryResult<string?>> GetProjectById(string id)
         {
             _logger.LogDebug("Fetching project ID for task { id }.", id);
-            return await _db.ColumnTasks
-                .Where(t => t.Id == id)
-                .Select(t => t.Column.ProjectId)
-                .FirstOrDefaultAsync();
+            try
+            {
+                var projectId = await _db.ColumnTasks
+                    .Where(t => t.Id == id)
+                    .Select(t => t.Column.ProjectId)
+                    .FirstOrDefaultAsync();
+                return new RepositoryResult<string?> { Success = true, Data = projectId };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while fetching project ID for task: {Id} from the database.", id);
+                return new RepositoryResult<string?> { Success = false, Message = "An error occurred while fetching project ID." };
+            }
         }
 
-        public async Task<List<ColumnTask>> GetByColumnId(string columnId)
+        public async Task<RepositoryResult<List<ColumnTask>>> GetByColumnId(string columnId)
         {
             _logger.LogDebug("Fetching tasks for column ID: {ColumnId} from the database.", columnId);
-            return await _db.ColumnTasks
-                .Include(t => t.Owner)
-                .Where(t => t.ColumnId == columnId)
-                .ToListAsync();
+            try
+            {
+                var tasks = await _db.ColumnTasks
+                    .Include(t => t.Owner)
+                    .Where(t => t.ColumnId == columnId)
+                    .ToListAsync();
+                return new RepositoryResult<List<ColumnTask>> { Success = true, Data = tasks };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while fetching tasks for column ID: {ColumnId} from the database.", columnId);
+                return new RepositoryResult<List<ColumnTask>> { Success = false, Message = "An error occurred while fetching tasks." };
+            }
         }
 
-        public async Task<bool> Create(ColumnTask entity)
+        public async Task<RepositoryResult<bool>> Create(ColumnTask entity)
         {
             _logger.LogDebug("Creating a new task with name: {Name} in the database.", entity.Name);
             await _db.ColumnTasks.AddAsync(entity);
-            return await _db.SaveChangesAsync() > 0;
+            var saved = await _db.SaveChangesAsync() > 0;
+            return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to create task." };
         }
 
-        public async Task<bool> Update(string id, ColumnTask entity)
+        public async Task<RepositoryResult<bool>> Update(string id, ColumnTask entity)
         {
             _logger.LogDebug("Updating task with ID: {Id} in the database.", id);
             var existing = await _db.ColumnTasks.FindAsync(id);
             if (existing is null)
             {
                 _logger.LogWarning("Task with ID: {Id} not found in the database.", id);
-                return false;
+                return new RepositoryResult<bool> { Success = false, Message = "Task not found." };
             }
 
             existing.Name = entity.Name;
@@ -74,73 +112,78 @@ namespace neco_board_ce.Repositories.Tables
             existing.Text = entity.Text;
 
             _db.ColumnTasks.Update(existing);
-            return await _db.SaveChangesAsync() > 0;
+            var saved = await _db.SaveChangesAsync() > 0;
+            return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to update task." };
         }
 
-        public async Task<bool> UpdateStatus(string id, ColumnTaskStatus status)
+        public async Task<RepositoryResult<bool>> UpdateStatus(string id, ColumnTaskStatus status)
         {
             _logger.LogDebug("Updating status of task with ID: {Id} to {Status} in the database.", id, status);
             var existing = await _db.ColumnTasks.FindAsync(id);
             if (existing is null)
             {
                 _logger.LogWarning("Task with ID: {Id} not found in the database.", id);
-                return false;
+                return new RepositoryResult<bool> { Success = false, Message = "Task not found." };
             }
 
             existing.Status = status;
             _db.ColumnTasks.Update(existing);
-            return await _db.SaveChangesAsync() > 0;
+            var saved = await _db.SaveChangesAsync() > 0;
+            return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to update task status." };
         }
 
-        public async Task<bool> UpdatePriority(string id, TaskPriority priority)
+        public async Task<RepositoryResult<bool>> UpdatePriority(string id, TaskPriority priority)
         {
             _logger.LogDebug("Updating priority of task with ID: {Id} to {Priority} in the database.", id, priority);
             var existing = await _db.ColumnTasks.FindAsync(id);
             if (existing is null)
             {
                 _logger.LogWarning("Task with ID: {Id} not found in the database.", id);
-                return false;
+                return new RepositoryResult<bool> { Success = false, Message = "Task not found." };
             }
 
             existing.Priority = priority;
             _db.ColumnTasks.Update(existing);
-            return await _db.SaveChangesAsync() > 0;
+            var saved = await _db.SaveChangesAsync() > 0;
+            return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to update task priority." };
         }
 
-        public async Task<bool> MoveToColumn(string id, string columnId)
+        public async Task<RepositoryResult<bool>> MoveToColumn(string id, string columnId)
         {
             _logger.LogDebug("Moving task with ID: {Id} to column ID: {ColumnId} in the database.", id, columnId);
             var existing = await _db.ColumnTasks.FindAsync(id);
             if (existing is null)
             {
                 _logger.LogWarning("Task with ID: {Id} not found in the database.", id);
-                return false;
+                return new RepositoryResult<bool> { Success = false, Message = "Task not found." };
             }
 
             var columnExists = await _db.Columns.AnyAsync(c => c.Id == columnId);
             if (!columnExists)
             {
                 _logger.LogWarning("Column with ID: {ColumnId} not found in the database.", columnId);
-                return false;
+                return new RepositoryResult<bool> { Success = false, Message = "Column not found." };
             }
 
             existing.ColumnId = columnId;
             _db.ColumnTasks.Update(existing);
-            return await _db.SaveChangesAsync() > 0;
+            var saved = await _db.SaveChangesAsync() > 0;
+            return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to move task to column." };
         }
 
-        public async Task<bool> Delete(string id)
+        public async Task<RepositoryResult<bool>> Delete(string id)
         {
             _logger.LogDebug("Deleting task with ID: {Id} from the database.", id);
             var existing = await _db.ColumnTasks.FindAsync(id);
             if (existing is null)
             {
                 _logger.LogWarning("Task with ID: {Id} not found in the database.", id);
-                return false;
+                return new RepositoryResult<bool> { Success = false, Message = "Task not found." };
             }
 
             _db.ColumnTasks.Remove(existing);
-            return await _db.SaveChangesAsync() > 0;
+            var saved = await _db.SaveChangesAsync() > 0;
+            return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to delete task." };
         }
     }
 }
