@@ -4,7 +4,6 @@ using neco_board_ce.Models.DTO.Request;
 using neco_board_ce.Models.Entity;
 using neco_board_ce.Models.Results;
 using neco_board_ce.Repositories.Tables;
-using static Synx.SynxValue;
 
 namespace neco_board_ce.Services.Authentication
 {
@@ -49,7 +48,10 @@ namespace neco_board_ce.Services.Authentication
 
         public async Task<AuthResult> LoginAsync(LoginRequest dto)
         {
-            var account = await _accountRepository.GetByLogin(dto.Login);
+            var result = await _accountRepository.GetByLogin(dto.Login);
+            if(!result.Success) return new AuthResult(false, Error: result.Message);
+
+            var account = result.Data;
             if (account is null || !BCrypt.Net.BCrypt.Verify(dto.Password, account.Password))
                 return new AuthResult(false, Error: "Invalid login or password");
 
