@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using neco_board_ce.Data;
 using neco_board_ce.Interfaces;
 using neco_board_ce.Models.Entity;
+using neco_board_ce.Models.Results;
 
 namespace neco_board_ce.Repositories.Tables
 {
@@ -16,39 +17,67 @@ namespace neco_board_ce.Repositories.Tables
             _logger = logger;
         }
 
-        public async Task<List<TaskAttachments>> GetAll()
+        public async Task<RepositoryResult<List<TaskAttachments>>> GetAll()
         {
             _logger.LogDebug("Fetching all task attachments from the database.");
-            return await _db.TaskAttachments.ToListAsync();
+            try
+            {
+                var result = await _db.TaskAttachments.ToListAsync();
+                return new RepositoryResult<List<TaskAttachments>> { Success = true, Data = result };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while fetching task attachments from the database.");
+                return new RepositoryResult<List<TaskAttachments>> { Success = false, Message = "An error occurred while fetching task attachments." };
+            }
         }
 
-        public async Task<TaskAttachments?> GetById(string id)
+        public async Task<RepositoryResult<TaskAttachments?>> GetById(string id)
         {
             _logger.LogDebug("Fetching task attachment with ID: {Id} from the database.", id);
-            return await _db.TaskAttachments.FindAsync(id);
+            try
+            {
+                var result = await _db.TaskAttachments.FindAsync(id);
+                return new RepositoryResult<TaskAttachments?> { Success = true, Data = result };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while fetching task attachment with ID: {Id} from the database.", id);
+                return new RepositoryResult<TaskAttachments?> { Success = false, Message = "An error occurred while fetching task attachment." };
+            }
         }
 
-        public async Task<List<TaskAttachments>> GetByTaskId(string taskId)
+        public async Task<RepositoryResult<List<TaskAttachments>>> GetByTaskId(string taskId)
         {
             _logger.LogDebug("Fetching attachments for task ID: {TaskId} from the database.", taskId);
-            return await _db.TaskAttachments.Where(a => a.TaskId == taskId).ToListAsync();
+            try
+            {
+                var result = await _db.TaskAttachments.Where(a => a.TaskId == taskId).ToListAsync();
+                return new RepositoryResult<List<TaskAttachments>> { Success = true, Data = result };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while fetching task attachments for task ID: {TaskId} from the database.", taskId);
+                return new RepositoryResult<List<TaskAttachments>> { Success = false, Message = "An error occurred while fetching task attachments." };
+            }
         }
 
-        public async Task<bool> Create(TaskAttachments entity)
+        public async Task<RepositoryResult<bool>> Create(TaskAttachments entity)
         {
             _logger.LogDebug("Creating a new attachment for task ID: {TaskId} in the database.", entity.TaskId);
             await _db.TaskAttachments.AddAsync(entity);
-            return await _db.SaveChangesAsync() > 0;
+            var saved = await _db.SaveChangesAsync() > 0;
+            return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to create task attachment." };
         }
 
-        public async Task<bool> Update(string id, TaskAttachments entity)
+        public async Task<RepositoryResult<bool>> Update(string id, TaskAttachments entity)
         {
             _logger.LogDebug("Updating task attachment with ID: {Id} in the database.", id);
             var existing = await _db.TaskAttachments.FindAsync(id);
             if (existing is null)
             {
                 _logger.LogWarning("Task attachment with ID: {Id} not found in the database.", id);
-                return false;
+                return new RepositoryResult<bool> { Success = false, Message = "Task attachment not found." };
             }
 
             existing.Name = entity.Name;
@@ -56,21 +85,23 @@ namespace neco_board_ce.Repositories.Tables
             existing.FilePath = entity.FilePath;
 
             _db.TaskAttachments.Update(existing);
-            return await _db.SaveChangesAsync() > 0;
+            var saved = await _db.SaveChangesAsync() > 0;
+            return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to update task attachment." };
         }
 
-        public async Task<bool> Delete(string id)
+        public async Task<RepositoryResult<bool>> Delete(string id)
         {
             _logger.LogDebug("Deleting task attachment with ID: {Id} from the database.", id);
             var existing = await _db.TaskAttachments.FindAsync(id);
             if (existing is null)
             {
                 _logger.LogWarning("Task attachment with ID: {Id} not found in the database.", id);
-                return false;
+                return new RepositoryResult<bool> { Success = false, Message = "Task attachment not found." };
             }
 
             _db.TaskAttachments.Remove(existing);
-            return await _db.SaveChangesAsync() > 0;
+            var saved = await _db.SaveChangesAsync() > 0;
+            return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to delete task attachment." };
         }
     }
 }
