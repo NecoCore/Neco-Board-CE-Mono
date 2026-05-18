@@ -27,7 +27,7 @@ namespace neco_board_ce.Controllers.Files
             await using var stream = file.OpenReadStream();
             var path = await _storage.SaveAsync(stream, file.FileName, "avatars");
             var result = await _repository.UpdateAvatar(UserId, path);
-            return result ? Ok(new { path }) : BadRequest();
+            return result.Success ? Ok(new { path }) : BadRequest(new { result.Message });
         }
 
         [HttpGet("{*filePath}")]
