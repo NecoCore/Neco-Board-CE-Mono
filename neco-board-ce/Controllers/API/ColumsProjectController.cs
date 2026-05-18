@@ -7,6 +7,7 @@ using neco_board_ce.Models.DTO.Request;
 using neco_board_ce.Models.Entity;
 using neco_board_ce.Models.Enums;
 using neco_board_ce.Repositories.Tables;
+using neco_board_ce.Utils.Check;
 using neco_board_ce.Utils.Controllers;
 
 namespace neco_board_ce.Controllers.API
@@ -18,13 +19,15 @@ namespace neco_board_ce.Controllers.API
     {
         private readonly ILogger<ColumsProjectController> _logger;
         private readonly ColumnsRepository _repository;
-        private readonly UserProjectRoleRepository _userProjectReposirory;
         private readonly IHubContext<ProjectHub> _projectHubContext;
+        private readonly UserAccessCheck _userAccess;
+        private readonly UserProjectRoleRepository _userProjectReposirory;
 
         public ColumsProjectController(ILogger<ColumsProjectController> logger, ColumnsRepository repository, UserProjectRoleRepository userProjectReposirory, IHubContext<ProjectHub> projectHubContext)
         {
             _logger = logger;
             _repository = repository;
+            _userAccess = new UserAccessCheck(userProjectReposirory);
             _userProjectReposirory = userProjectReposirory;
             _projectHubContext = projectHubContext;
         }
@@ -32,9 +35,12 @@ namespace neco_board_ce.Controllers.API
         [HttpGet]
         public async Task<IActionResult> GetColumnsProject(string projectId)
         {
-            var users = await _userProjectReposirory.GetByProjectId(projectId);
-            var existing = users.Select(u => u.UserId).Contains(UserId);
-            if (!existing && !IsWorkspaceAdmin()) return Forbid();
+            var accessResult = await _userAccess.HasAccessToProject(UserId, projectId);
+            if(!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
+
+            var result = await _userProjectReposirory.GetByProjectId(projectId);
+            if (!result.Success) return BadRequest(new { result.Message });
+            if (result.Data is null || result.Data.Count == 0) return NoContent();
 
             var columns = await _repository.GetByProjectId(projectId);
             return Ok(columns);
@@ -43,16 +49,14 @@ namespace neco_board_ce.Controllers.API
         [HttpPost]
         public async Task<IActionResult> CreateColumnProject(string projectId, [FromBody] ColumnRequest dto)
         {
-            if (!IsWorkspaceAdmin())
-            {
-                var user = await _userProjectReposirory.GetByUserAndProject(UserId, projectId);
-                if (user is null) return Forbid();
+            var accessResult = await _userAccess.HasAccessToProject(UserId, projectId, ProjectRole.MODERATOR);
+            if (!IsWorkspaceAdmin() && !accessResult.Result) return Forbid();
 
-                if (user.Role != ProjectRole.OWNER && user.Role != ProjectRole.MODERATOR)
-                    return Forbid();
-            }
+            var result = await _repository.GetByProjectId(projectId);
+            if(!result.Success) return BadRequest(result.Message);
+            if(result.Data is null) return BadRequest("Project not found");
 
-            var columns = await _repository.GetByProjectId(projectId);
+            var columns = result.Data;
             var queue = columns.Count > 0 ? columns.Max(c => c.Queue) + 1 : 1;
 
             var newColumn = new Column {
@@ -61,81 +65,63 @@ namespace neco_board_ce.Controllers.API
                 ProjectId = projectId,
             };
 
-            var result = await _repository.Create(newColumn);
-            if (result)
+            var createResult = await _repository.Create(newColumn);
+            if (createResult.Success)
             {
                 await _projectHubContext.Clients.Group(projectId).SendAsync(Constants.SOKET_EVENT_COLUMN_CREATED);
                 return Ok();
             }
-            return BadRequest();
+            return BadRequest(createResult.Message);
         }
 
         [HttpPut("{columnId}")]
         public async Task<IActionResult> UpdateColumn(string columnId, string projectId, [FromBody] ColumnRequest dto)
         {
-            if (!IsWorkspaceAdmin())
-            {
-                var user = await _userProjectReposirory.GetByUserAndProject(UserId, projectId);
-                if (user is null) return Forbid();
-
-                if (user.Role != ProjectRole.OWNER && user.Role != ProjectRole.MODERATOR)
-                    return Forbid();
-            }
+            var accessResult = await _userAccess.HasAccessToProject(UserId, projectId, ProjectRole.MODERATOR);
+            if (!IsWorkspaceAdmin() && !accessResult.Result) return Forbid();
 
             var updateColumn = new Column
             {
                 Name = dto.Name
             };
-            var result = await _repository.Update(columnId, updateColumn);
+            var updateResult = await _repository.Update(columnId, updateColumn);
 
-            if (result)
+            if (updateResult.Success)
             {
                 await _projectHubContext.Clients.Group(projectId).SendAsync(Constants.SOKET_EVENT_COLUMN_UPDATED);
                 return Ok();
             }
-            return BadRequest();
+            return BadRequest(updateResult.Message);
         }
 
         [HttpPut("{columnId}/order")]
         public async Task<IActionResult> UpdateColumnOrder(string columnId, string projectId, [FromBody] int queue)
         {
-            if (!IsWorkspaceAdmin())
-            {
-                var user = await _userProjectReposirory.GetByUserAndProject(UserId, projectId);
-                if (user is null) return Forbid();
-
-                if (user.Role != ProjectRole.OWNER && user.Role != ProjectRole.MODERATOR)
-                    return Forbid();
-            }
+            var accessResult = await _userAccess.HasAccessToProject(UserId, projectId, ProjectRole.MODERATOR);
+            if (!IsWorkspaceAdmin() && !accessResult.Result) return Forbid();
 
             var result = await _repository.UpdateOrder(projectId, columnId, queue);
-            if (result)
+            if (result.Success)
             {
                 await _projectHubContext.Clients.Group(projectId).SendAsync(Constants.SOKET_EVENT_COLUMN_UPDATED_ORDER);
                 return Ok();
             }
-            return BadRequest();
+            return BadRequest(result.Message);
         }
 
         [HttpDelete("{columnId}")]
         public async Task<IActionResult> DeleteColumn(string columnId, string projectId)
         {
-            if (!IsWorkspaceAdmin())
-            {
-                var user = await _userProjectReposirory.GetByUserAndProject(UserId, projectId);
-                if (user is null) return Forbid();
-
-                if (user.Role != ProjectRole.OWNER && user.Role != ProjectRole.MODERATOR)
-                    return Forbid();
-            }
+            var accessResult = await _userAccess.HasAccessToProject(UserId, projectId, ProjectRole.MODERATOR);
+            if (!IsWorkspaceAdmin() && !accessResult.Result) return Forbid();
 
             var result = await _repository.Delete(columnId);
-            if (result)
+            if (result.Success)
             {
                 await _projectHubContext.Clients.Group(projectId).SendAsync(Constants.SOKET_EVENT_COLUMN_DELETED);
                 return Ok();
             }
-            return BadRequest();
+            return BadRequest(result.Message);
         }
     }
 }
