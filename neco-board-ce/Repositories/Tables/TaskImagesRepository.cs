@@ -39,6 +39,7 @@ namespace neco_board_ce.Repositories.Tables
                     Message = "An error occurred while fetching task images."
                 };
             }
+        }
 
         public async Task<RepositoryResult<TaskImages?>> GetById(string id)
         {
