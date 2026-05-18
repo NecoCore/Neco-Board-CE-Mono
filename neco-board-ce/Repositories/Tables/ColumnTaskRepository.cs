@@ -34,6 +34,15 @@ namespace neco_board_ce.Repositories.Tables
                 .FirstOrDefaultAsync(t => t.Id == id);
         }
 
+        public async Task<string?> GetProjectById(string id)
+        {
+            _logger.LogDebug("Fetching project ID for task { id }.", id);
+            return await _db.ColumnTasks
+                .Where(t => t.Id == id)
+                .Select(t => t.Column.ProjectId)
+                .FirstOrDefaultAsync();
+        }
+
         public async Task<List<ColumnTask>> GetByColumnId(string columnId)
         {
             _logger.LogDebug("Fetching tasks for column ID: {ColumnId} from the database.", columnId);
