@@ -4,7 +4,6 @@ using neco_board_ce.Interfaces;
 using neco_board_ce.Models.Entity;
 using neco_board_ce.Models.Enums;
 using neco_board_ce.Models.Results;
-using System.Data;
 
 namespace neco_board_ce.Repositories.Tables
 {
