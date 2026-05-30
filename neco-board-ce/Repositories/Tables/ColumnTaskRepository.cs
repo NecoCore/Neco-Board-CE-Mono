@@ -116,36 +116,36 @@ namespace neco_board_ce.Repositories.Tables
             return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to update task." };
         }
 
-        public async Task<RepositoryResult<bool>> UpdateStatus(string id, ColumnTaskStatus status)
+        public async Task<RepositoryResult<string>> UpdateStatus(string id, ColumnTaskStatus status)
         {
             _logger.LogDebug("Updating status of task with ID: {Id} to {Status} in the database.", id, status);
             var existing = await _db.ColumnTasks.FindAsync(id);
             if (existing is null)
             {
                 _logger.LogWarning("Task with ID: {Id} not found in the database.", id);
-                return new RepositoryResult<bool> { Success = false, Message = "Task not found." };
+                return new RepositoryResult<string> { Success = false, Message = "Task not found." };
             }
 
             existing.Status = status;
             _db.ColumnTasks.Update(existing);
             var saved = await _db.SaveChangesAsync() > 0;
-            return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to update task status." };
+            return new RepositoryResult<string> { Success = saved, Message = saved ? string.Empty : "Failed to update task status.", Data = existing.ColumnId };
         }
 
-        public async Task<RepositoryResult<bool>> UpdatePriority(string id, TaskPriority priority)
+        public async Task<RepositoryResult<string>> UpdatePriority(string id, TaskPriority priority)
         {
             _logger.LogDebug("Updating priority of task with ID: {Id} to {Priority} in the database.", id, priority);
             var existing = await _db.ColumnTasks.FindAsync(id);
             if (existing is null)
             {
                 _logger.LogWarning("Task with ID: {Id} not found in the database.", id);
-                return new RepositoryResult<bool> { Success = false, Message = "Task not found." };
+                return new RepositoryResult<string> { Success = false, Message = "Task not found." };
             }
 
             existing.Priority = priority;
             _db.ColumnTasks.Update(existing);
             var saved = await _db.SaveChangesAsync() > 0;
-            return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to update task priority." };
+            return new RepositoryResult<string> { Success = saved, Message = saved ? string.Empty : "Failed to update task priority.", Data = existing.ColumnId };
         }
 
         public async Task<RepositoryResult<bool>> MoveToColumn(string id, string columnId)
