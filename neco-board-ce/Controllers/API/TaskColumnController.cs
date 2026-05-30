@@ -1,92 +1,179 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Amazon.S3.Model;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using neco_board_ce.Controllers.Hubs;
 using neco_board_ce.Data;
 using neco_board_ce.Models.DTO.Request;
 using neco_board_ce.Models.DTO.Request.Tasks;
+using neco_board_ce.Models.DTO.Response.Massages;
 using neco_board_ce.Models.DTO.Response.Task;
 using neco_board_ce.Models.Entity;
 using neco_board_ce.Models.Enums;
 using neco_board_ce.Repositories.Tables;
+using neco_board_ce.Utils.Check;
 using neco_board_ce.Utils.Controllers;
 
 namespace neco_board_ce.Controllers.API
 {
+    /// <summary>
+    /// Provides endpoints for creating, reading, updating, and deleting tasks
+    /// within project columns.
+    /// </summary>
+    /// <remarks>
+    /// All endpoints require authentication via the <c>[Authorize]</c> attribute.
+    /// Access is controlled by the caller's project role (<see cref="ProjectRole"/>)
+    /// or workspace administrator privileges.
+    /// Successful mutations broadcast real-time SignalR events to the parent project group.
+    /// </remarks>
     [ApiController]
     [Authorize]
-    [Route("api/project/{projectId}/column/{columnId}/task")]
+    [Route("api/tasks")]
+    [Tags("Task column")]
     public class TaskColumnController : UserAuth
     {
         private readonly ILogger<TaskColumnController> _logger;
         private readonly ColumnTaskRepository _repository;
-        private readonly UserProjectRoleRepository _userProjectReposirory;
         private readonly TaskUserRepository _taskUserRepository;
+        private readonly UserAccessCheck _userAccess;
         private readonly IHubContext<ProjectHub> _projectHubContext;
         private readonly IHubContext<TaskHub> _taskHubContext;
 
-        public TaskColumnController(ILogger<TaskColumnController> logger, ColumnTaskRepository repository, UserProjectRoleRepository userProjectReposirory, TaskUserRepository taskUserRepository, IHubContext<ProjectHub> projectHubConext, IHubContext<TaskHub> taskHubContext)
+        public TaskColumnController(ILogger<TaskColumnController> logger, UserAccessCheck userAccess, ColumnTaskRepository repository, TaskUserRepository taskUserRepository, IHubContext<ProjectHub> projectHubConext, IHubContext<TaskHub> taskHubContext)
         {
             _logger = logger;
             _repository = repository;
-            _userProjectReposirory = userProjectReposirory;
+            _userAccess = userAccess;
             _taskUserRepository = taskUserRepository;
             _projectHubContext = projectHubConext;
             _taskHubContext = taskHubContext;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetInColumn(string projectId, string columnId)
+        /// <summary>
+        /// Returns the list of tasks belonging to the specified column.
+        /// </summary>
+        /// <remarks>
+        /// Access requires any project membership for the column's parent project,
+        /// or workspace administrator privileges.
+        /// Returns <c>204 No Content</c> when the column exists but contains no tasks
+        /// (repository returns a <c>null</c> data payload).
+        /// Each item in the returned list contains only summary fields
+        /// (<see cref="TaskResponse"/>), not the full task body text.
+        /// </remarks>
+        /// <param name="columnId">The unique identifier of the column whose tasks are requested.</param>
+        /// <returns>
+        /// <see cref="OkObjectResult"/> with a list of <see cref="TaskResponse"/> on success;
+        /// <see cref="NoContentResult"/> when the column has no tasks;
+        /// <see cref="ForbidResult"/> when access is denied;
+        /// <see cref="BadRequestObjectResult"/> when the repository operation fails.
+        /// </returns>
+        /// <response code="200">Returns the list of tasks in the column.</response>
+        /// <response code="204">The column exists but contains no tasks.</response>
+        /// <response code="400">Repository or database operation failed. Response body contains the error message.</response>
+        /// <response code="401">The request is not authenticated.</response>
+        /// <response code="403">The caller is not a project member and is not a workspace administrator.</response>
+        [HttpGet("in-column/{columnId}", Name = "GetTasksInColumn")]
+        [ProducesResponseType(typeof(List<TaskResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> GetInColumn(string columnId)
         {
-            if (!IsWorkspaceAdmin())
-            {
-                var user = await _userProjectReposirory.GetByUserAndProject(UserId, projectId);
-                if (user is null) return Forbid();
-            }
+            var accessResult = await _userAccess.HasAccessToColumn(UserId, columnId);
+            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var tasks = await _repository.GetByColumnId(columnId);
-            if (tasks is null) return NoContent();
+            if (!tasks.Success) return BadRequest(new ErrorMessageResponse { Message = tasks.Message });
+            if (tasks.Data is null) return NoContent();
 
-            var taskLitle = tasks.Select(t => new
+            var taskLitle = tasks.Data.Select(t => new TaskResponse
             {
-                t.Id,
-                t.Name,
-                t.Description,
-                t.Priority,
-                t.Status,
-                t.CreatedAt,
-                t.ColumnId
+                Id = t.Id,
+                Name = t.Name,
+                Description = t.Description,
+                Priority = t.Priority,
+                Status = t.Status,
+                CreatedAt = t.CreatedAt,
+                ColumnId = t.ColumnId
             }).ToList();
 
             return Ok(taskLitle);
         }
 
-        [HttpGet("{taskId}")]
-        public async Task<IActionResult> GetTaskInfo(string projectId, string taskId)
+        /// <summary>
+        /// Returns the full details of a single task by its identifier.
+        /// </summary>
+        /// <remarks>
+        /// Access requires any project membership for the task's parent project,
+        /// or workspace administrator privileges.
+        /// Returns <c>204 No Content</c> when the repository finds no record for
+        /// the given <paramref name="taskId"/> (data payload is <c>null</c>).
+        /// </remarks>
+        /// <param name="taskId">The unique identifier of the task to retrieve.</param>
+        /// <returns>
+        /// <see cref="OkObjectResult"/> with the <see cref="ColumnTask"/> entity on success;
+        /// <see cref="NoContentResult"/> when no task exists for the given ID;
+        /// <see cref="ForbidResult"/> when access is denied;
+        /// <see cref="BadRequestObjectResult"/> when the repository operation fails.
+        /// </returns>
+        /// <response code="200">Returns the full task entity.</response>
+        /// <response code="204">No task found for the provided identifier.</response>
+        /// <response code="400">Repository or database operation failed. Response body contains the error message.</response>
+        /// <response code="401">The request is not authenticated.</response>
+        /// <response code="403">The caller is not a project member and is not a workspace administrator.</response>
+        [HttpGet("{taskId}", Name = "GetTaskById")]
+        [ProducesResponseType(typeof(ColumnTask), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> GetTaskInfo(string taskId)
         {
-            if (!IsWorkspaceAdmin())
-            {
-                var user = await _userProjectReposirory.GetByUserAndProject(UserId, projectId);
-                if (user is null) return Forbid();
-            }
+            var accessResult = await _userAccess.HasAccessToTask(UserId, taskId);
+            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var task = await _repository.GetById(taskId);
-            if (task is null) return NoContent();
-            return Ok(task);
+            if (!task.Success) return BadRequest(new ErrorMessageResponse { Message = task.Message });
+            if (task.Data is null) return NoContent();
+
+            return Ok(task.Data);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create(string projectId, string columnId, [FromBody] TaskColumnRequest dto)
+        /// <summary>
+        /// Creates a new task in the specified column.
+        /// </summary>
+        /// <remarks>
+        /// The caller is automatically set as the task owner (<c>OwnerId</c>).
+        /// Requires at least <see cref="ProjectRole.VIEWER"/> membership in the column's
+        /// parent project, or workspace administrator privileges.
+        /// On success, broadcasts the <c>SOKET_EVENT_TASK_CREATED</c> SignalR event
+        /// to the parent project group, passing the target column ID as the payload.
+        /// </remarks>
+        /// <param name="dto">Request body containing the column ID, name, description, and text of the new task.</param>
+        /// <returns>
+        /// <see cref="OkResult"/> on success;
+        /// <see cref="ForbidResult"/> when access is denied;
+        /// <see cref="BadRequestObjectResult"/> when the repository operation fails.
+        /// </returns>
+        /// <response code="200">Task created successfully.</response>
+        /// <response code="400">Repository or database operation failed. Response body contains the error message.</response>
+        /// <response code="401">The request is not authenticated.</response>
+        /// <response code="403">The caller does not have VIEWER role in the project and is not a workspace administrator.</response>
+        [HttpPost(Name = "CreateTask")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> Create([FromBody] TaskColumnRequest dto)
         {
-            if (!IsWorkspaceAdmin())
-            {
-                var user = await _userProjectReposirory.GetByUserAndProject(UserId, projectId);
-                if (user is null || user.Role == ProjectRole.VIEWER) return Forbid();
-            }
+            var accessResult = await _userAccess.HasAccessToColumn(UserId, dto.ColumnId, ProjectRole.VIEWER);
+            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var task = new ColumnTask
             {
-                ColumnId = columnId,
+                ColumnId = dto.ColumnId,
                 OwnerId = UserId,
                 Name = dto.Name,
                 Description = dto.Description,
@@ -94,22 +181,45 @@ namespace neco_board_ce.Controllers.API
             };
             var result = await _repository.Create(task);
 
-            if(result) 
+            if(result.Success)
             {
-                await _projectHubContext.Clients.Group(projectId).SendAsync(Constants.SOKET_EVENT_TASK_CREATED, columnId);
+                await _projectHubContext.Clients.Group(accessResult.ProjectId!).SendAsync(Constants.SOKET_EVENT_TASK_CREATED, dto.ColumnId);
                 return Ok();
             }
-            return BadRequest();
+            return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Unknown error" });
         }
 
-        [HttpPut("{taskId}")]
-        public async Task<IActionResult> Update(string projectId, string taskId, [FromBody] TaskColumnRequest dto)
+        /// <summary>
+        /// Replaces the content fields of an existing task (name, description, text).
+        /// </summary>
+        /// <remarks>
+        /// Only the <c>Name</c>, <c>Description</c>, and <c>Text</c> fields are updated;
+        /// column assignment, status, and priority are not affected by this endpoint.
+        /// Requires at least <see cref="ProjectRole.VIEWER"/> membership in the task's
+        /// parent project, or workspace administrator privileges.
+        /// On success, broadcasts the <c>SOKET_EVENT_TASK_UPDATED</c> SignalR event
+        /// to the parent project group with the task ID as the payload.
+        /// </remarks>
+        /// <param name="taskId">The unique identifier of the task to update.</param>
+        /// <param name="dto">Request body containing the new name, description, and text values.</param>
+        /// <returns>
+        /// <see cref="OkResult"/> on success;
+        /// <see cref="ForbidResult"/> when access is denied;
+        /// <see cref="BadRequestObjectResult"/> when the repository operation fails.
+        /// </returns>
+        /// <response code="200">Task content updated successfully.</response>
+        /// <response code="400">Repository or database operation failed. Response body contains the error message.</response>
+        /// <response code="401">The request is not authenticated.</response>
+        /// <response code="403">The caller does not have VIEWER role in the project and is not a workspace administrator.</response>
+        [HttpPut("{taskId}", Name = "UpdateTask")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> Update(string taskId, [FromBody] TaskColumnRequest dto)
         {
-            if (!IsWorkspaceAdmin())
-            {
-                var user = await _userProjectReposirory.GetByUserAndProject(UserId, projectId);
-                if (user is null || user.Role == ProjectRole.VIEWER) return Forbid();
-            }
+            var accessResult = await _userAccess.HasAccessToTask(UserId, taskId, ProjectRole.VIEWER);
+            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var task = new ColumnTask
             {
@@ -120,70 +230,54 @@ namespace neco_board_ce.Controllers.API
             };
             var result = await _repository.Update(taskId, task);
 
-            if (result)
+            if (result.Success)
             {
-                await _projectHubContext.Clients.Group(projectId).SendAsync(Constants.SOKET_EVENT_TASK_UPDATED, taskId);
+                await _projectHubContext.Clients.Group(accessResult.ProjectId!).SendAsync(Constants.SOKET_EVENT_TASK_UPDATED, taskId);
                 return Ok();
             }
-            return BadRequest();
+            return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Unknown error" });
         }
 
-        [HttpPatch("{taskId}/status")]
-        public async Task<IActionResult> UpdateStatus(string projectId, string columnId, string taskId, [FromBody] EditTaskStatusRequest dto)
-        {
-            if (!IsWorkspaceAdmin())
-            {
-                var user = await _userProjectReposirory.GetByUserAndProject(UserId, projectId);
-                if (user is null || user.Role == ProjectRole.VIEWER) return Forbid();
-            }
-
-            var result = await _repository.UpdateStatus(taskId, dto.Status);
-
-            if (result)
-            {
-                await _taskHubContext.Clients.Group(taskId).SendAsync(Constants.SOKET_EVENT_TASK_STATUS_UPDATED);
-                await _projectHubContext.Clients.Group(projectId).SendAsync(Constants.SOKET_EVENT_TASK_STATUS_UPDATED, columnId);
-                return Ok();
-            }
-            return BadRequest();
-        }
-
-        [HttpPatch("{taskId}/priority")]
-        public async Task<IActionResult> UpdatePriority(string projectId, string columnId, string taskId, [FromBody] EditTaskPriorityRequest dto)
-        {
-            if (!IsWorkspaceAdmin())
-            {
-                var user = await _userProjectReposirory.GetByUserAndProject(UserId, projectId);
-                if (user is null || user.Role == ProjectRole.VIEWER) return Forbid();
-            }
-
-            var result = await _repository.UpdatePriority(taskId, dto.Priority);
-
-            if (result)
-            {
-                await _taskHubContext.Clients.Group(taskId).SendAsync(Constants.SOKET_EVENT_TASK_PRIORITY_UPDATED);
-                await _projectHubContext.Clients.Group(projectId).SendAsync(Constants.SOKET_EVENT_TASK_PRIORITY_UPDATED, new EditTaskSocketResponse
-                {
-                    TaskId = taskId,
-                    ColumnId = columnId
-                });
-                return Ok();
-            }
-            return BadRequest();
-        }
-
-        [HttpPatch("{taskId}/column")]
+        /// <summary>
+        /// Moves a task to a different column within the same project.
+        /// </summary>
+        /// <remarks>
+        /// Requires at least <see cref="ProjectRole.VIEWER"/> membership in the task's
+        /// parent project, or workspace administrator privileges.
+        /// On success, broadcasts the <c>SOKET_EVENT_TASK_COLUMN_UPDATED</c> SignalR event
+        /// to the project group identified by <paramref name="projectId"/>.
+        /// The event payload is a <see cref="NewTaskColumnSocketRequest"/> containing
+        /// both the previous and the new column identifiers.
+        /// <br/><br/>
+        /// <paramref name="projectId"/> and <paramref name="columnId"/> are passed
+        /// as query string parameters (not part of the route template).
+        /// </remarks>
+        /// <param name="projectId">The unique identifier of the parent project (query parameter), used to target the SignalR group.</param>
+        /// <param name="taskId">The unique identifier of the task to move (route parameter).</param>
+        /// <param name="columnId">The current column identifier of the task (query parameter), sent as <c>OldColumnId</c> in the SignalR payload.</param>
+        /// <param name="dto">Request body containing the target column ID (<c>ColumnId</c>).</param>
+        /// <returns>
+        /// <see cref="OkResult"/> on success;
+        /// <see cref="ForbidResult"/> when access is denied;
+        /// <see cref="BadRequestObjectResult"/> when the repository operation fails.
+        /// </returns>
+        /// <response code="200">Task moved to the new column successfully.</response>
+        /// <response code="400">Repository or database operation failed. Response body contains the error message.</response>
+        /// <response code="401">The request is not authenticated.</response>
+        /// <response code="403">The caller does not have VIEWER role in the project and is not a workspace administrator.</response>
+        [HttpPatch("{taskId}/column", Name = "MoveTaskToColumn")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> UpdateColumn(string projectId, string taskId, string columnId, [FromBody] EditTaskColumnRequest dto)
         {
-            if (!IsWorkspaceAdmin())
-            {
-                var user = await _userProjectReposirory.GetByUserAndProject(UserId, projectId);
-                if (user is null || user.Role == ProjectRole.VIEWER) return Forbid();
-            }
+            var accessResult = await _userAccess.HasAccessToTask(UserId, taskId, ProjectRole.VIEWER);
+            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var result = await _repository.MoveToColumn(taskId, dto.ColumnId);
 
-            if (result)
+            if (result.Success)
             {
                 var response = new NewTaskColumnSocketRequest
                 {
@@ -193,86 +287,53 @@ namespace neco_board_ce.Controllers.API
                 await _projectHubContext.Clients.Group(projectId).SendAsync(Constants.SOKET_EVENT_TASK_COLUMN_UPDATED, response);
                 return Ok();
             }
-            return BadRequest();
+            return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Unknown error" });
         }
 
-        [HttpGet("{taskId}/user")]
-        public async Task<IActionResult> GetUsers(string projectId, string taskId)
-        {
-            if (!IsWorkspaceAdmin())
-            {
-                var user = await _userProjectReposirory.GetByUserAndProject(UserId, projectId);
-                if (user is null) return Forbid();
-            }
-
-            var users = await _taskUserRepository.GetByTaskId(taskId);
-            return Ok(users);
-        }
-
-        [HttpPost("{taskId}/user")]
-        public async Task<IActionResult> AddUser(string projectId, string taskId, [FromBody] AddUserInTaskRequest dto)
-        {
-            if (!IsWorkspaceAdmin())
-            {
-                var user = await _userProjectReposirory.GetByUserAndProject(UserId, projectId);
-
-                if (user is null || user.Role == ProjectRole.VIEWER)
-                    return Forbid();
-
-                if (user.Role == ProjectRole.USER && dto.UserId is not null)
-                    return Forbid();
-            }
-
-            string targetUserId = dto.UserId ?? UserId;
-            var result = await _taskUserRepository.AddUser(taskId, targetUserId);
-
-            if (result)
-            {
-                await _taskHubContext.Clients.Group(taskId).SendAsync(Constants.SOKET_EVENT_TASK_USER_ADDED);
-                return Ok();
-            }
-            return BadRequest();
-        }
-
-        [HttpDelete("{taskId}/user")]
-        public async Task<IActionResult> RemoveUser(string projectId, string taskId, [FromBody] string userId)
-        {
-            if (!IsWorkspaceAdmin())
-            {
-                var user = await _userProjectReposirory.GetByUserAndProject(UserId, projectId);
-                if (user is null || user.Role == ProjectRole.VIEWER)
-                    return Forbid();
-                if (user.Role == ProjectRole.USER && userId != UserId)
-                    return Forbid();
-            }
-            var result = await _taskUserRepository.RemoveUser(taskId, userId);
-
-            if (result)
-            {
-                await _taskHubContext.Clients.Group(taskId).SendAsync(Constants.SOKET_EVENT_TASK_USER_REMOVED);
-                return Ok();
-            }
-            return BadRequest();
-        }
-
-        [HttpDelete("{taskId}")]
+        /// <summary>
+        /// Permanently deletes a task by its identifier.
+        /// </summary>
+        /// <remarks>
+        /// Requires at least <see cref="ProjectRole.VIEWER"/> membership in the task's
+        /// parent project, or workspace administrator privileges.
+        /// On success, two SignalR events are broadcast:
+        /// <list type="bullet">
+        ///   <item><description><c>SOKET_EVENT_TASK_DELETED</c> — sent to the task's own group.</description></item>
+        ///   <item><description><c>SOKET_EVENT_TASK_PRIORITY_UPDATED</c> — sent to the project group with the task ID as payload.</description></item>
+        /// </list>
+        /// <paramref name="projectId"/> is passed as a query string parameter
+        /// (not part of the route template) and is used to target the project SignalR group.
+        /// </remarks>
+        /// <param name="projectId">The unique identifier of the parent project (query parameter), used to target the SignalR group.</param>
+        /// <param name="taskId">The unique identifier of the task to delete (route parameter).</param>
+        /// <returns>
+        /// <see cref="OkResult"/> on success;
+        /// <see cref="ForbidResult"/> when access is denied;
+        /// <see cref="BadRequestObjectResult"/> when the repository operation fails.
+        /// </returns>
+        /// <response code="200">Task deleted successfully.</response>
+        /// <response code="400">Repository or database operation failed. Response body contains the error message.</response>
+        /// <response code="401">The request is not authenticated.</response>
+        /// <response code="403">The caller does not have VIEWER role in the project and is not a workspace administrator.</response>
+        [HttpDelete("{taskId}", Name = "DeleteTask")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> DeleteTask(string projectId, string taskId)
         {
-            if (!IsWorkspaceAdmin())
-            {
-                var user = await _userProjectReposirory.GetByUserAndProject(UserId, projectId);
-                if (user is null || user.Role == ProjectRole.VIEWER) return Forbid();
-            }
+            var accessResult = await _userAccess.HasAccessToTask(UserId, taskId, ProjectRole.VIEWER);
+            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var result = await _repository.Delete(taskId);
 
-            if (result)
+            if (result.Success)
             {
                 await _taskHubContext.Clients.Group(taskId).SendAsync(Constants.SOKET_EVENT_TASK_DELETED);
                 await _projectHubContext.Clients.Group(projectId).SendAsync(Constants.SOKET_EVENT_TASK_PRIORITY_UPDATED, taskId);
                 return Ok();
             }
-            return BadRequest();
+            return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Unknown error" });
         }
     }
 }
