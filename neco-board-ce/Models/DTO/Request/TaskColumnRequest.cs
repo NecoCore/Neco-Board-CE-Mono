@@ -9,6 +9,9 @@ namespace neco_board_ce.Models.DTO.Request
         [MaxLength(250)]
         public string Name { get; set; }
 
+        [Required]
+        public string ColumnId { get; set; }
+
         [MaxLength(1000)]
         public string Description { get; set; } = string.Empty;
 
