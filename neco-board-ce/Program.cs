@@ -6,6 +6,7 @@ using neco_board_ce.Controllers.Hubs;
 using neco_board_ce.Data;
 using neco_board_ce.Repositories.Tables;
 using neco_board_ce.Services.Authentication;
+using neco_board_ce.Utils.Check;
 using Scalar.AspNetCore;
 
 DotNetEnv.Env.Load();
@@ -123,6 +124,7 @@ builder.Services.AddScoped<LogsRepository>();
 // Register services
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<UserAccessCheck>();
 
 // Open API
 builder.Services.AddOpenApi(options =>
