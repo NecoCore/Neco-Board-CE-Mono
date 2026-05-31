@@ -131,6 +131,13 @@ builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer((document, context, ct) =>
     {
+        document.Info = new OpenApiInfo
+        {
+            Title = "Neco Board CE",
+            Version = "v0.2.1-beta",
+            Description = "Documentation for project menagment API"
+        };
+
         document.Components ??= new();
         document.Components.SecuritySchemes = new Dictionary<string, IOpenApiSecurityScheme>
         {
@@ -167,6 +174,7 @@ builder.Services.AddOpenApi(options =>
 
         return Task.CompletedTask;
     });
+
 });
 
 // Ports
