@@ -46,9 +46,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Returns a public summary list of all registered users.
+        /// Get All Users
         /// </summary>
         /// <remarks>
+        /// Returns a public summary list of all registered users.
         /// Each item is mapped to a <see cref="UserInfoResponse"/> that contains only
         /// publicly visible fields. Use <c>GET /api/users/all</c> for the full account
         /// data (requires <c>ADMIN</c> or <c>OWNER</c> role).
@@ -85,9 +86,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Returns the full account list with all fields. Restricted to administrators and owners.
+        /// Get All Users For Admins
         /// </summary>
         /// <remarks>
+        /// Returns the full account list with all fields. Restricted to administrators and owners.
         /// Returns the raw <see cref="Account"/> entities without field filtering.
         /// Intended for administrative use only.
         /// Returns <c>204 No Content</c> when the repository succeeds but no users exist.
@@ -125,9 +127,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Updates the workspace role of a user. Restricted to the workspace owner.
+        /// Edit User Role
         /// </summary>
         /// <remarks>
+        /// Updates the workspace role of a user. Restricted to the workspace owner.
         /// Only the workspace <c>OWNER</c> may call this endpoint.
         /// Assigning the <c>OWNER</c> role to another user is explicitly prohibited and
         /// returns <c>403 Forbidden</c> immediately without reaching the repository.
@@ -166,9 +169,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Changes the password of the currently authenticated user.
+        /// Update User Password
         /// </summary>
         /// <remarks>
+        /// Changes the password of the currently authenticated user.
         /// The caller must supply the current password (<c>OldPassword</c>) for verification.
         /// The new password (<c>Password</c>) must match the confirmation field (<c>ConfirmPassword</c>).
         /// Both validation failures return <c>400 Bad Request</c> with a descriptive message.
@@ -221,9 +225,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Returns the list of projects the authenticated user is a member of.
+        /// Get My Projects
         /// </summary>
         /// <remarks>
+        /// Returns the list of projects the authenticated user is a member of.
         /// The user ID is taken from the JWT — no query parameter is required.
         /// Returns <c>204 No Content</c> when the user is not a member of any project.
         /// Each item is mapped to a <see cref="ProjectItemResponse"/> summary.
@@ -258,9 +263,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Returns all tasks assigned to the authenticated user, grouped by project.
+        /// Get My Tasks
         /// </summary>
         /// <remarks>
+        /// Returns all tasks assigned to the authenticated user, grouped by project.
         /// The user ID is taken from the JWT — no query parameter is required.
         /// Results are grouped by the parent project of each task's column.
         /// Tasks whose column or project cannot be resolved are grouped under
@@ -320,9 +326,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Permanently deletes a user account. Restricted to administrators and owners.
+        /// Delete User
         /// </summary>
         /// <remarks>
+        /// Permanently deletes a user account. Restricted to administrators and owners.
         /// The following rules are enforced before deletion:
         /// <list type="bullet">
         ///   <item><description>A user cannot delete their own account — returns <c>400</c>.</description></item>

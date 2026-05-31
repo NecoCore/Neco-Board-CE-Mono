@@ -49,9 +49,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Updates the status of a task.
+        /// Update Task Status
         /// </summary>
         /// <remarks>
+        /// Updates the status of a task.
         /// On success, broadcasts the <c>SOKET_EVENT_TASK_STATUS_UPDATED</c> SignalR event
         /// to both the task group (identified by <paramref name="taskId"/>) and the parent
         /// project group. The project group receives the new status value as the event payload.
@@ -93,9 +94,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Updates the priority of a task.
+        /// Update Task Priority
         /// </summary>
         /// <remarks>
+        /// Updates the priority of a task.
         /// On success, broadcasts the <c>SOKET_EVENT_TASK_PRIORITY_UPDATED</c> SignalR event
         /// to both the task group (identified by <paramref name="taskId"/>) and the parent
         /// project group. The project group receives an <see cref="EditTaskSocketResponse"/>
@@ -142,9 +144,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Returns all users assigned to the specified task.
+        /// Get All Users In Task
         /// </summary>
         /// <remarks>
+        /// Returns all users assigned to the specified task.
         /// Any project member (any role) or a workspace administrator may call this endpoint.
         /// When no users are assigned, the repository returns an empty list and the response
         /// is still <c>200 OK</c> — the endpoint never returns <c>204 No Content</c>.
@@ -180,9 +183,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Assigns a user to the specified task.
+        /// Add User In Task
         /// </summary>
         /// <remarks>
+        /// Assigns a user to the specified task.
         /// A two-tier access check is enforced:
         /// <list type="number">
         ///   <item>
@@ -244,9 +248,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Removes a user from the specified task.
+        /// Remove User From Task
         /// </summary>
         /// <remarks>
+        /// Removes a user from the specified task.
         /// A two-tier access check is enforced — identical to <see cref="AddUser"/>:
         /// <list type="number">
         ///   <item>

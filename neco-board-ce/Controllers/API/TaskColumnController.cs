@@ -51,9 +51,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Returns the list of tasks belonging to the specified column.
+        /// Get Tasks In Column
         /// </summary>
         /// <remarks>
+        /// Returns the list of tasks belonging to the specified column.
         /// Access requires any project membership for the column's parent project,
         /// or workspace administrator privileges.
         /// Returns <c>204 No Content</c> when the column exists but contains no tasks
@@ -103,9 +104,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Returns the full details of a single task by its identifier.
+        /// Get Task By Id
         /// </summary>
         /// <remarks>
+        /// Returns the full details of a single task by its identifier.
         /// Access requires any project membership for the task's parent project,
         /// or workspace administrator privileges.
         /// Returns <c>204 No Content</c> when the repository finds no record for
@@ -142,9 +144,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Creates a new task in the specified column.
+        /// Create Task
         /// </summary>
         /// <remarks>
+        /// Creates a new task in the specified column.
         /// The caller is automatically set as the task owner (<c>OwnerId</c>).
         /// Requires at least <see cref="ProjectRole.VIEWER"/> membership in the column's
         /// parent project, or workspace administrator privileges.
@@ -190,9 +193,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Replaces the content fields of an existing task (name, description, text).
+        /// Update Task
         /// </summary>
         /// <remarks>
+        /// Replaces the content fields of an existing task (name, description, text).
         /// Only the <c>Name</c>, <c>Description</c>, and <c>Text</c> fields are updated;
         /// column assignment, status, and priority are not affected by this endpoint.
         /// Requires at least <see cref="ProjectRole.VIEWER"/> membership in the task's
@@ -239,9 +243,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Moves a task to a different column within the same project.
+        /// Move Task To Column
         /// </summary>
         /// <remarks>
+        /// Moves a task to a different column within the same project.
         /// Requires at least <see cref="ProjectRole.VIEWER"/> membership in the task's
         /// parent project, or workspace administrator privileges.
         /// On success, broadcasts the <c>SOKET_EVENT_TASK_COLUMN_UPDATED</c> SignalR event
@@ -291,9 +296,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Permanently deletes a task by its identifier.
+        /// Delete Task
         /// </summary>
         /// <remarks>
+        /// Permanently deletes a task by its identifier.
         /// Requires at least <see cref="ProjectRole.VIEWER"/> membership in the task's
         /// parent project, or workspace administrator privileges.
         /// On success, two SignalR events are broadcast:

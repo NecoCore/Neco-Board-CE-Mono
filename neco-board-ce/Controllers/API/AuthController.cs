@@ -34,7 +34,7 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Authenticates a user with login and password, and issues a JWT access token.
+        /// Login
         /// </summary>
         /// <remarks>
         /// On success, the response body contains a <see cref="RefreshResponse"/> with the access token,
@@ -60,7 +60,7 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Creates a new user account. Restricted to users with the ADMIN or OWNER role.
+        /// Register
         /// </summary>
         /// <remarks>
         /// The <c>[Authorize(Roles = "ADMIN,OWNER")]</c> attribute causes the framework to
@@ -93,9 +93,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Issues a new JWT access token using the refresh token stored in the request cookie.
+        /// Refresh
         /// </summary>
         /// <remarks>
+        /// Issues a new JWT access token using the refresh token stored in the request cookie.
         /// Reads the <c>refreshToken</c> value from the <c>HttpOnly</c> request cookie.
         /// On success, returns a new access token in the body and rotates the <c>refreshToken</c>
         /// cookie with a fresh value and expiry.
@@ -136,9 +137,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Revokes the current refresh token and clears the authentication cookie.
+        /// Logout
         /// </summary>
         /// <remarks>
+        /// Revokes the current refresh token and clears the authentication cookie.
         /// Always returns <c>200 OK</c> regardless of whether the <c>refreshToken</c> cookie is present.
         /// If the cookie exists, the token is revoked via the auth service and the cookie is deleted.
         /// If the cookie is absent, the request is logged as a warning and <c>200</c> is returned
@@ -167,9 +169,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Returns the profile of the currently authenticated user, extracted from JWT claims.
+        /// Get Me Info
         /// </summary>
         /// <remarks>
+        /// Returns the profile of the currently authenticated user, extracted from JWT claims.
         /// Reads the following claims from the validated JWT and maps them to <see cref="MeResponse"/>:
         /// <list type="bullet">
         ///   <item><description><c>Id</c> — <see cref="ClaimTypes.NameIdentifier"/></description></item>

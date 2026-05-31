@@ -56,9 +56,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Returns a summary list of all projects in the workspace. Restricted to administrators and owners.
+        /// Get All Projects
         /// </summary>
         /// <remarks>
+        /// Returns a summary list of all projects in the workspace. Restricted to administrators and owners.
         /// Returns <c>204 No Content</c> when the repository succeeds but returns no data
         /// (i.e. no projects exist yet).
         /// Returns <c>500</c> when the repository itself fails — this indicates an infrastructure
@@ -97,9 +98,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Returns the full details of a single project by its identifier.
+        /// Get Project By Id
         /// </summary>
         /// <remarks>
+        /// Returns the full details of a single project by its identifier.
         /// Access requires project membership (any role) or workspace administrator privileges.
         /// Returns <c>404</c> with an <see cref="ErrorMessageResponse"/> body when the repository
         /// succeeds but finds no record for <paramref name="id"/>.
@@ -142,9 +144,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Creates a new project and assigns the creator as its owner. Restricted to administrators and owners.
+        /// Create Project
         /// </summary>
         /// <remarks>
+        /// Creates a new project and assigns the creator as its owner. Restricted to administrators and owners.
         /// The authenticated user is automatically set as both <c>OwnerId</c> on the project entity
         /// and the first member with the <c>OWNER</c> role via <c>UserProjectRoleRepository</c>.
         /// If the role-assignment step fails, a warning is logged but the endpoint still returns
@@ -202,9 +205,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Updates the name, description, and owner of an existing project. Restricted to administrators and owners.
+        /// Update Project
         /// </summary>
         /// <remarks>
+        /// Updates the name, description, and owner of an existing project. Restricted to administrators and owners.
         /// On success, broadcasts the <c>SOKET_EVENT_PROJECT_UPDATED</c> SignalR event
         /// to both the project's own group and the global admins group.
         /// The admins group event carries the project ID as payload.
@@ -252,9 +256,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Permanently deletes a project by its identifier. Restricted to administrators and owners.
+        /// Delete Project
         /// </summary>
         /// <remarks>
+        /// Permanently deletes a project by its identifier. Restricted to administrators and owners.
         /// On success, broadcasts two SignalR events:
         /// <list type="bullet">
         ///   <item><description><c>SOKET_EVENT_PROJECT_DELETED</c> — sent to the project's own group (notifies all project members).</description></item>

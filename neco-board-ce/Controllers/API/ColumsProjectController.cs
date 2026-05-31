@@ -50,9 +50,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Returns the ordered list of columns belonging to the specified project.
+        /// Get Columns In Project
         /// </summary>
         /// <remarks>
+        /// Returns the ordered list of columns belonging to the specified project.
         /// Access requires any project membership or workspace administrator privileges.
         /// Returns <c>204 No Content</c> when the repository succeeds but the project
         /// has no columns yet (data payload is <c>null</c>).
@@ -94,9 +95,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Creates a new column at the end of the column sequence for the specified project.
+        /// Create Column In Project
         /// </summary>
         /// <remarks>
+        /// Creates a new column at the end of the column sequence for the specified project.
         /// Requires at least the <c>MODERATOR</c> role in the project, or workspace administrator privileges.
         /// The new column's <c>Queue</c> position is calculated as <c>max(existing queues) + 1</c>,
         /// or <c>1</c> if the project currently has no columns.
@@ -157,9 +159,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Updates the name of an existing column.
+        /// Update Column
         /// </summary>
         /// <remarks>
+        /// Updates the name of an existing column.
         /// Requires at least the <c>MODERATOR</c> role in the column's parent project,
         /// or workspace administrator privileges.
         /// On success, broadcasts <c>SOKET_EVENT_COLUMN_UPDATED</c> to the project's SignalR group.
@@ -204,9 +207,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Updates the display order (queue position) of a column within its project.
+        /// Update Column Order
         /// </summary>
         /// <remarks>
+        /// Updates the display order (queue position) of a column within its project.
         /// Requires at least the <c>MODERATOR</c> role in the column's parent project,
         /// or workspace administrator privileges.
         /// The project ID is resolved internally from the access check result and passed
@@ -248,9 +252,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Permanently deletes a column and all its contents from the project.
+        /// Delete Column
         /// </summary>
         /// <remarks>
+        /// Permanently deletes a column and all its contents from the project.
         /// Requires at least the <c>MODERATOR</c> role in the parent project,
         /// or workspace administrator privileges.
         /// <paramref name="projectId"/> is a query string parameter used to resolve

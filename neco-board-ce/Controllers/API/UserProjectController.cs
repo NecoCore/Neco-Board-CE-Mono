@@ -48,9 +48,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Returns the list of all members in the specified project, including their roles.
+        /// Get All Users In Project
         /// </summary>
         /// <remarks>
+        /// Returns the list of all members in the specified project, including their roles.
         /// Access requires any project membership or workspace administrator privileges.
         /// Returns <c>204 No Content</c> when the repository succeeds but the project has no members.
         /// Each item is mapped to a <see cref="UserInfoProjectResponse"/> that includes the user's project role.
@@ -93,9 +94,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Adds a user to the project with the specified role.
+        /// Add User In Project
         /// </summary>
         /// <remarks>
+        /// Adds a user to the project with the specified role.
         /// Requires at least the <c>MODERATOR</c> role in the project, or workspace administrator privileges.
         /// On success, two SignalR events are broadcast:
         /// <list type="bullet">
@@ -139,9 +141,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Updates the project role of a member.
+        /// Update User In Project
         /// </summary>
         /// <remarks>
+        /// Updates the project role of a member.
         /// Requires at least the <c>MODERATOR</c> role in the project, or workspace administrator privileges.
         /// When the caller is not a workspace administrator, the following additional role hierarchy rules apply:
         /// <list type="bullet">
@@ -216,9 +219,10 @@ namespace neco_board_ce.Controllers.API
         }
 
         /// <summary>
-        /// Removes a user from the project.
+        /// Remove User From Project
         /// </summary>
         /// <remarks>
+        /// Removes a user from the project.
         /// Requires at least the <c>MODERATOR</c> role in the project, or workspace administrator privileges.
         /// When the caller is not a workspace administrator, the same role hierarchy rules as
         /// <c>UpdateUserInProject</c> apply — an <c>OWNER</c> cannot be removed, and a moderator
