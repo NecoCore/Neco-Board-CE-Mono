@@ -194,7 +194,7 @@ namespace neco_board_ce.Controllers.API
             }
             else
             {
-                await _appHubContext.Clients.User(UserId).SendAsync(Constants.SOKET_EVENT_PROJECT_CREATED);
+                await _appHubContext.Clients.User(UserId!).SendAsync(Constants.SOKET_EVENT_PROJECT_CREATED);
             }
 
             await _appHubContext.Clients.Group(Constants.GROUP_ADMINS).SendAsync(Constants.SOKET_EVENT_PROJECT_CREATED);

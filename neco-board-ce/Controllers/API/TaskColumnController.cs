@@ -81,11 +81,11 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetInColumn(string columnId)
         {
-            var accessResult = await _userAccess.HasAccessToColumn(UserId, columnId);
+            var accessResult = await _userAccess.HasAccessToColumn(UserId!, columnId);
             if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var tasks = await _repository.GetByColumnId(columnId);
-            if (!tasks.Success) return BadRequest(new ErrorMessageResponse { Message = tasks.Message });
+            if (!tasks.Success) return BadRequest(new ErrorMessageResponse { Message = tasks.Message ?? "unknown error" });
             if (tasks.Data is null) return NoContent();
 
             var taskLitle = tasks.Data.Select(t => new TaskResponse
@@ -131,11 +131,11 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetTaskInfo(string taskId)
         {
-            var accessResult = await _userAccess.HasAccessToTask(UserId, taskId);
+            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId);
             if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var task = await _repository.GetById(taskId);
-            if (!task.Success) return BadRequest(new ErrorMessageResponse { Message = task.Message });
+            if (!task.Success) return BadRequest(new ErrorMessageResponse { Message = task.Message ?? "unknown error" });
             if (task.Data is null) return NoContent();
 
             return Ok(task.Data);
@@ -168,13 +168,13 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Create([FromBody] TaskColumnRequest dto)
         {
-            var accessResult = await _userAccess.HasAccessToColumn(UserId, dto.ColumnId, ProjectRole.VIEWER);
+            var accessResult = await _userAccess.HasAccessToColumn(UserId!, dto.ColumnId, ProjectRole.VIEWER);
             if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var task = new ColumnTask
             {
                 ColumnId = dto.ColumnId,
-                OwnerId = UserId,
+                OwnerId = UserId!,
                 Name = dto.Name,
                 Description = dto.Description,
                 Text = dto.Text,
