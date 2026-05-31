@@ -4,8 +4,11 @@ using Microsoft.AspNetCore.SignalR;
 using neco_board_ce.Controllers.Hubs;
 using neco_board_ce.Data;
 using neco_board_ce.Models.DTO.Request;
+using neco_board_ce.Models.DTO.Response.Massages;
+using neco_board_ce.Models.DTO.Response.Users;
 using neco_board_ce.Models.Enums;
 using neco_board_ce.Repositories.Tables;
+using neco_board_ce.Utils.Check;
 using neco_board_ce.Utils.Controllers;
 
 namespace neco_board_ce.Controllers.API
@@ -18,129 +21,160 @@ namespace neco_board_ce.Controllers.API
         private readonly ILogger<UserProjectController> _logger;
         private readonly UserProjectRoleRepository _repository;
         private readonly IHubContext<ProjectHub> _projectHubContext;
+        private readonly UserAccessCheck _userAccess;
 
-        public UserProjectController(ILogger<UserProjectController> logger, UserProjectRoleRepository repository, IHubContext<ProjectHub> projectHubContext)
-        {
+        public UserProjectController(
+            ILogger<UserProjectController> logger, 
+            UserProjectRoleRepository repository, 
+            IHubContext<ProjectHub> projectHubContext,
+            UserAccessCheck userAccess
+        ) {
             _logger = logger;
             _repository = repository;
             _projectHubContext = projectHubContext;
+            _userAccess = userAccess;
         }
 
-        [HttpGet]
+        [HttpGet(Name = "GetAllUsersInProject")]
+        [ProducesResponseType(typeof(List<UserInfoProjectResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetUsersProjectById(string projectId)
         {
-            var users = await _repository.GetByProjectId(projectId);
-            if (users == null || !users.Any()) return NotFound();
+            var accessResult = await _userAccess.HasAccessToProject(UserId!, projectId);
+            if(!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
-            if (!IsWorkspaceAdmin())
+            var result = await _repository.GetByProjectId(projectId);
+            if (!result.Success)
             {
-                var userId = UserId; 
-                var isMember = users.Any(u => u.UserId == userId);
-                if (!isMember) return Forbid();
+                _logger.LogError("Failed to retrieve all users in project {ProjectId}: {Error}", projectId, result.Message ?? "unknown error");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorMessageResponse { Message = "Unable to retrieve the user list. Please try again later." });
             }
+            if (result.Data is null) return NoContent();
 
-            var usersInfo = users.Select(x => new
-            {
-                id = x.UserId,
-                name = x.User.Name,
-                avatar = x.User.Avatar,
-                role = x.Role,
-            });
-
-            return Ok(usersInfo);
+            var data = result.Data.Select(x => new UserInfoProjectResponse(x)).ToList();
+            return Ok(data);
         }
 
-        [HttpPost]
+        [HttpPost(Name = "AddUserInProject")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> AddUserInProject([FromBody] UserProjectRequest dto, string projectId)
         {
-            if (UserId is null) return Unauthorized();
-
-            if(!IsWorkspaceAdmin())
-            {
-                var user = await _repository.GetByUserAndProject(UserId, projectId);
-                if (user is null || (user.Role != ProjectRole.OWNER && user.Role != ProjectRole.MODERATOR))
-                    return Forbid();
-            }
+            var accessResult = await _userAccess.HasAccessToProject(UserId!, projectId, ProjectRole.MODERATOR);
+            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var result = await _repository.AddToProject(dto.Id, projectId, dto.Role);
-            if (result)
+            if (result.Success)
             {
                 await _projectHubContext.Clients.Group(projectId).SendAsync(Constants.SOKET_EVENT_USER_ADDED_TO_PROJECT);
                 await _projectHubContext.Clients.User(dto.Id).SendAsync(Constants.SOKET_EVENT_PROJECT_CREATED);
-                return Ok();
+                return NoContent();
             }
-            return NotFound();
+
+            _logger.LogError("Failed to retrieve all users in project {ProjectId}: {Error}", projectId, result.Message ?? "unknown error");
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new ErrorMessageResponse { Message = "Unable to retrieve the user list. Please try again later." });
         }
 
 
-        [HttpPatch("{userId}")]
+        [HttpPatch("{userId}", Name = "UpdateUserInProject")]
         [Authorize]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UpdateUserInProject(string projectId, string userId, [FromBody] EditUserInProjectRequest dto)
         {
-            if (UserId is null) return Unauthorized();
+            var accessResult = await _userAccess.HasAccessToProject(UserId!, projectId, ProjectRole.MODERATOR);
+            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
-            if (!IsWorkspaceAdmin())
+            var result = await _repository.GetByUserAndProject(userId, projectId);
+            if(!result.Success)
             {
-                var user = await _repository.GetByUserAndProject(UserId, projectId);
+                _logger.LogError("Failed to retrieve all users in project {ProjectId}: {Error}", projectId, result.Message ?? "unknown error");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorMessageResponse { Message = "Unable to retrieve the user list. Please try again later." });
+            }
+            if (result.Data is null) return NotFound();
 
-                if (user is null || (user.Role != ProjectRole.OWNER && user.Role != ProjectRole.MODERATOR))
+            if(!IsWorkspaceAdmin())
+            {
+                var rolesResult = await _repository.GetByUserAndProject(UserId!, projectId);
+                if(!rolesResult.Success || rolesResult.Data is null) return NotFound();
+
+                if (result.Data.Role == ProjectRole.OWNER)
                     return Forbid();
-
-                var editUser = await _repository.GetByUserAndProject(userId, projectId);
-                if (editUser is null) return NotFound();
-
-                if (user.Role >= editUser.Role || user.Role >= dto.Role)
+                else if (result.Data.Role == ProjectRole.MODERATOR && rolesResult.Data.Role >= ProjectRole.MODERATOR)
+                    return Forbid();
+                else if (result.Data.Role == rolesResult.Data.Role)
                     return Forbid();
             }
-            else
-            {
-                var editUser = await _repository.GetByUserAndProject(userId, projectId);
-                if (editUser is null) return NotFound();
-            }
 
-            var result = await _repository.UpdateRole(userId, projectId, dto.Role);
-            if (result)
+            var editResult = await _repository.UpdateRole(userId, projectId, dto.Role);
+            if (editResult.Success)
             {
                 await _projectHubContext.Clients.Group(projectId).SendAsync(Constants.SOKET_EVENT_USER_ROLE_UPDATED_IN_PROJECT, userId);
                 await _projectHubContext.Clients.User(userId).SendAsync(Constants.SOKET_EVENT_USER_ROLE_UPDATED_IN_PROJECT, userId);
-                return Ok();
+                return NoContent();
             }
-            return NotFound();
+
+            _logger.LogError("Failed to retrieve all users in project {ProjectId}: {Error}", projectId, result.Message ?? "unknown error");
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new ErrorMessageResponse { Message = "Unable to retrieve the user list. Please try again later." });
         }
 
-        [HttpDelete("{userId}")]
+        [HttpDelete("{userId}", Name = "RemoveUserFromProject")]
         [Authorize]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteUserInProject(string projectId, string userId)
         {
-            if (UserId is null) return Unauthorized();
+            var accessResult = await _userAccess.HasAccessToProject(UserId!, projectId, ProjectRole.MODERATOR);
+            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
+
+            var result = await _repository.GetByUserAndProject(userId, projectId);
+            if (!result.Success)
+            {
+                _logger.LogError("Failed to retrieve all users in project {ProjectId}: {Error}", projectId, result.Message ?? "unknown error");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorMessageResponse { Message = "Unable to retrieve the user list. Please try again later." });
+            }
+            if (result.Data is null) return NotFound();
 
             if (!IsWorkspaceAdmin())
             {
-                var user = await _repository.GetByUserAndProject(UserId, projectId);
+                var rolesResult = await _repository.GetByUserAndProject(UserId!, projectId);
+                if (!rolesResult.Success || rolesResult.Data is null) return NotFound();
 
-                if (user is null || (user.Role != ProjectRole.OWNER && user.Role != ProjectRole.MODERATOR))
+                if (result.Data.Role == ProjectRole.OWNER)
                     return Forbid();
-
-                var editUser = await _repository.GetByUserAndProject(userId, projectId);
-                if (editUser is null) return NotFound();
-
-                if (user.Role >= editUser.Role)
+                else if (result.Data.Role == ProjectRole.MODERATOR && rolesResult.Data.Role >= ProjectRole.MODERATOR)
+                    return Forbid();
+                else if (result.Data.Role == rolesResult.Data.Role)
                     return Forbid();
             }
-            else
-            {
-                var editUser = await _repository.GetByUserAndProject(userId, projectId);
-                if (editUser is null) return NotFound();
-            }
 
-            var result = await _repository.RemoveFromProject(userId, projectId);
-            if (result)
+            var removingResult = await _repository.RemoveFromProject(userId, projectId);
+            if (removingResult.Success)
             {
                 await _projectHubContext.Clients.Group(projectId).SendAsync(Constants.SOKET_EVENT_USER_REMOVED_FROM_PROJECT, userId);
                 await _projectHubContext.Clients.User(userId).SendAsync(Constants.SOKET_EVENT_USER_REMOVED_FROM_PROJECT, userId);
-                return Ok();
+                return NoContent();
             }
-            return NotFound();
+
+            _logger.LogError("Failed to retrieve all users in project {ProjectId}: {Error}", projectId, result.Message ?? "unknown error");
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new ErrorMessageResponse { Message = "Unable to retrieve the user list. Please try again later." });
         }
     }
 }
