@@ -49,7 +49,7 @@ namespace neco_board_ce.Utils.Check
             var userInProject = await _userProjectRoleRepository.GetByUserAndProject(userId, projectId);
             if (userInProject.Success) return new ChekResult { Result = false, Message = userInProject.Message };
             if (userInProject.Data is null) return new ChekResult { Result = false, Message = "User dosen't have access in project" };
-            if (userInProject.Data.Role > role) return new ChekResult { Result = false, Message = "You don't have access to this route" };
+            if (userInProject.Data.Role >= role) return new ChekResult { Result = false, Message = "You don't have access to this route" };
 
             return new ChekResult { Result = true, ProjectId = column.Data.ProjectId };
         }
@@ -76,7 +76,7 @@ namespace neco_board_ce.Utils.Check
             var userInProject = await _userProjectRoleRepository.GetByUserAndProject(userId, projectId.Data);
             if (userInProject.Success) return new ChekResult { Result = false, Message = userInProject.Message };
             if (userInProject.Data is null) return new ChekResult { Result = false, Message = "User dosen't have access in project" };
-            if (userInProject.Data.Role > role) return new ChekResult { Result = false, Message = "You don't have access to this route" };
+            if (userInProject.Data.Role >= role) return new ChekResult { Result = false, Message = "You don't have access to this route" };
 
             return new ChekResult { Result = true, ProjectId = projectId.Data };
         }
@@ -95,7 +95,7 @@ namespace neco_board_ce.Utils.Check
             var userInProject = await _userProjectRoleRepository.GetByUserAndProject(userId, projectId);
             if (userInProject.Success) return new ChekResult { Result = false, Message = userInProject.Message };
             if (userInProject.Data is null) return new ChekResult { Result = false, Message = "User dosen't have access in project" };
-            if (userInProject.Data.Role > role) return new ChekResult { Result = false, Message = "You don't have access to this route" };
+            if (userInProject.Data.Role >= role) return new ChekResult { Result = false, Message = "You don't have access to this route" };
 
             return new ChekResult { Result = true };
         }
