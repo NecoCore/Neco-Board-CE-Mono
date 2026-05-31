@@ -174,13 +174,13 @@ namespace neco_board_ce.Controllers.API
         {
             var project = new Project
             {
-                OwnerId = UserId,
+                OwnerId = UserId!,
                 Name = dto.Name,
                 Description = dto.Description,
             };
 
             var createdResult = await _repository.Create(project);
-            var addedResult = await _userProjectReposirory.AddToProject(UserId, project.Id, Models.Enums.ProjectRole.OWNER);
+            var addedResult = await _userProjectReposirory.AddToProject(UserId!, project.Id, Models.Enums.ProjectRole.OWNER);
 
             if(!createdResult.Success)
             {
