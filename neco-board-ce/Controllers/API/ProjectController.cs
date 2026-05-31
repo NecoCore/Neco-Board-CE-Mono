@@ -91,9 +91,9 @@ namespace neco_board_ce.Controllers.API
                 var data = result.Data?.Select(p => new ProjectItemResponse(p)).ToList();
                 return data is null ? NoContent() : Ok(data);
             }
-            _logger.LogError("Failed to get all projects in admin route: {error}", result.Message ?? "unknown error");
+            _logger.LogError("Failed to retrieve all projects: {Error}", result.Message ?? "unknown error");
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new ErrorMessageResponse { Message = "An internal server error occurred while receiving all projects." });
+                new ErrorMessageResponse { Message = "Unable to retrieve the project list. Please try again later." });
         }
 
         /// <summary>
@@ -133,12 +133,12 @@ namespace neco_board_ce.Controllers.API
             if (result.Success)
             {
                 return result.Data is null ?
-                    NotFound(new ErrorMessageResponse { Message = $"Project with ID {id} not found." }) :
+                    NotFound(new ErrorMessageResponse { Message = $"Project '{id}' was not found." }) :
                     Ok(result.Data);
             }
-            _logger.LogError("Failed to get project {projectId}: {error}", id, result.Message ?? "unknown error");
+            _logger.LogError("Failed to retrieve project '{ProjectId}': {Error}", id, result.Message ?? "unknown error");
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new ErrorMessageResponse { Message = "An internal server error occurred while receiving the project." });
+                new ErrorMessageResponse { Message = "Unable to retrieve the project. Please try again later." });
         }
 
         /// <summary>
@@ -184,13 +184,13 @@ namespace neco_board_ce.Controllers.API
 
             if(!createdResult.Success)
             {
-                _logger.LogError("Failed to create a project '{projectName}': {error}", dto.Name, createdResult.Message ?? "unknown error");
+                _logger.LogError("Failed to create project '{ProjectName}': {Error}", dto.Name, createdResult.Message ?? "unknown error");
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    new ErrorMessageResponse { Message = $"An internal server error while creating a '{dto.Name}' project" });
+                    new ErrorMessageResponse { Message = $"Failed to create project '{dto.Name}'. Please try again later." });
             }
             if(!addedResult.Success)
             {
-                _logger.LogWarning("Failed to add user {userId} in project {projectId}: {error}", UserId, project.Id, createdResult.Message ?? "unknown error");
+                _logger.LogWarning("Failed to assign OWNER role to user '{UserId}' in project '{ProjectId}': {Error}", UserId, project.Id, createdResult.Message ?? "unknown error");
             }
             else
             {
@@ -246,9 +246,9 @@ namespace neco_board_ce.Controllers.API
                 return NoContent();
             }
 
-            _logger.LogError("Failed to update a project {id}: {error}", id, result.Message ?? "unknown error");
+            _logger.LogError("Failed to update project '{ProjectId}': {Error}", id, result.Message ?? "unknown error");
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new ErrorMessageResponse { Message = $"An internal server error while updating a project" });
+                new ErrorMessageResponse { Message = $"Failed to update project '{id}'. Please try again later." });
         }
 
         /// <summary>
@@ -289,9 +289,9 @@ namespace neco_board_ce.Controllers.API
                 return NoContent();
             }
 
-            _logger.LogError("Failed to delete a project {id}: {error}", id, result.Message ?? "unknown error");
+            _logger.LogError("Failed to delete project '{ProjectId}': {Error}", id, result.Message ?? "unknown error");
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new ErrorMessageResponse { Message = $"An internal server error while deleting a project" });
+                new ErrorMessageResponse { Message = $"Failed to delete project '{id}'. Please try again later." });
         }
     }
 }
