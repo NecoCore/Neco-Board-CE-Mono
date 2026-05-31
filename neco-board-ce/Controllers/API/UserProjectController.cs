@@ -13,9 +13,21 @@ using neco_board_ce.Utils.Controllers;
 
 namespace neco_board_ce.Controllers.API
 {
+    /// <summary>
+    /// Provides endpoints for managing project membership: listing members, adding, updating roles, and removing users.
+    /// </summary>
+    /// <remarks>
+    /// All endpoints are scoped to a single project identified by the <c>{projectId}</c> route parameter.
+    /// Write operations require at least the <c>MODERATOR</c> role in the project,
+    /// or workspace administrator privileges.
+    /// Role hierarchy rules prevent moderators from modifying users of equal or higher rank.
+    /// Successful mutations broadcast real-time SignalR events to the project group
+    /// and to the affected user's personal connection.
+    /// </remarks>
     [ApiController]
     [Authorize]
     [Route("api/project/{projectId}/users")]
+    [Tags("Project members")]
     public class UserProjectController : UserAuth
     {
         private readonly ILogger<UserProjectController> _logger;
@@ -24,8 +36,8 @@ namespace neco_board_ce.Controllers.API
         private readonly UserAccessCheck _userAccess;
 
         public UserProjectController(
-            ILogger<UserProjectController> logger, 
-            UserProjectRoleRepository repository, 
+            ILogger<UserProjectController> logger,
+            UserProjectRoleRepository repository,
             IHubContext<ProjectHub> projectHubContext,
             UserAccessCheck userAccess
         ) {
@@ -35,6 +47,27 @@ namespace neco_board_ce.Controllers.API
             _userAccess = userAccess;
         }
 
+        /// <summary>
+        /// Returns the list of all members in the specified project, including their roles.
+        /// </summary>
+        /// <remarks>
+        /// Access requires any project membership or workspace administrator privileges.
+        /// Returns <c>204 No Content</c> when the repository succeeds but the project has no members.
+        /// Each item is mapped to a <see cref="UserInfoProjectResponse"/> that includes the user's project role.
+        /// </remarks>
+        /// <param name="projectId">The unique identifier of the project (route parameter).</param>
+        /// <returns>
+        /// <see cref="OkObjectResult"/> with a list of <see cref="UserInfoProjectResponse"/> on success;
+        /// <see cref="NoContentResult"/> when the project has no members;
+        /// <see cref="UnauthorizedResult"/> when the caller is not authenticated;
+        /// <see cref="ForbidResult"/> when the caller is not a project member and is not a workspace administrator;
+        /// <see cref="StatusCodeResult"/> 500 with <see cref="ErrorMessageResponse"/> on repository failure.
+        /// </returns>
+        /// <response code="200">Returns the list of project members with their roles.</response>
+        /// <response code="204">The project has no members.</response>
+        /// <response code="401">The request is not authenticated.</response>
+        /// <response code="403">The caller is not a project member and is not a workspace administrator.</response>
+        /// <response code="500">Repository or infrastructure failure. Response body contains the error description.</response>
         [HttpGet(Name = "GetAllUsersInProject")]
         [ProducesResponseType(typeof(List<UserInfoProjectResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -49,9 +82,9 @@ namespace neco_board_ce.Controllers.API
             var result = await _repository.GetByProjectId(projectId);
             if (!result.Success)
             {
-                _logger.LogError("Failed to retrieve all users in project {ProjectId}: {Error}", projectId, result.Message ?? "unknown error");
+                _logger.LogError("Failed to retrieve members for project '{ProjectId}': {Error}", projectId, result.Message ?? "unknown error");
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    new ErrorMessageResponse { Message = "Unable to retrieve the user list. Please try again later." });
+                    new ErrorMessageResponse { Message = "Unable to retrieve the project member list. Please try again later." });
             }
             if (result.Data is null) return NoContent();
 
@@ -59,6 +92,29 @@ namespace neco_board_ce.Controllers.API
             return Ok(data);
         }
 
+        /// <summary>
+        /// Adds a user to the project with the specified role.
+        /// </summary>
+        /// <remarks>
+        /// Requires at least the <c>MODERATOR</c> role in the project, or workspace administrator privileges.
+        /// On success, two SignalR events are broadcast:
+        /// <list type="bullet">
+        ///   <item><description><c>SOKET_EVENT_USER_ADDED_TO_PROJECT</c> — sent to the project group.</description></item>
+        ///   <item><description><c>SOKET_EVENT_PROJECT_CREATED</c> — sent to the added user's personal connection to trigger a project list refresh.</description></item>
+        /// </list>
+        /// </remarks>
+        /// <param name="dto">Request body containing the target user ID and the role to assign.</param>
+        /// <param name="projectId">The unique identifier of the project (route parameter).</param>
+        /// <returns>
+        /// <see cref="NoContentResult"/> on success;
+        /// <see cref="UnauthorizedResult"/> when the caller is not authenticated;
+        /// <see cref="ForbidResult"/> when the caller lacks MODERATOR role and is not a workspace administrator;
+        /// <see cref="StatusCodeResult"/> 500 with <see cref="ErrorMessageResponse"/> on repository failure.
+        /// </returns>
+        /// <response code="204">User added to the project successfully.</response>
+        /// <response code="401">The request is not authenticated.</response>
+        /// <response code="403">The caller does not have MODERATOR role and is not a workspace administrator.</response>
+        /// <response code="500">Failed to add the user to the project. Response body contains the error description.</response>
         [HttpPost(Name = "AddUserInProject")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -77,12 +133,41 @@ namespace neco_board_ce.Controllers.API
                 return NoContent();
             }
 
-            _logger.LogError("Failed to retrieve all users in project {ProjectId}: {Error}", projectId, result.Message ?? "unknown error");
+            _logger.LogError("Failed to add user '{TargetUserId}' to project '{ProjectId}': {Error}", dto.Id, projectId, result.Message ?? "unknown error");
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new ErrorMessageResponse { Message = "Unable to retrieve the user list. Please try again later." });
+                new ErrorMessageResponse { Message = "Failed to add the user to the project. Please try again later." });
         }
 
-
+        /// <summary>
+        /// Updates the project role of a member.
+        /// </summary>
+        /// <remarks>
+        /// Requires at least the <c>MODERATOR</c> role in the project, or workspace administrator privileges.
+        /// When the caller is not a workspace administrator, the following additional role hierarchy rules apply:
+        /// <list type="bullet">
+        ///   <item><description>The target user's role is <c>OWNER</c> — returns <c>403</c>.</description></item>
+        ///   <item><description>The target user's role is <c>MODERATOR</c> and the caller's role is <c>MODERATOR</c> or higher — returns <c>403</c>.</description></item>
+        ///   <item><description>The target user's role equals the caller's role — returns <c>403</c>.</description></item>
+        /// </list>
+        /// Returns <c>404</c> when the target user or the calling user is not a member of the project.
+        /// On success, broadcasts <c>SOKET_EVENT_USER_ROLE_UPDATED_IN_PROJECT</c> to both
+        /// the project group and the affected user's personal connection.
+        /// </remarks>
+        /// <param name="projectId">The unique identifier of the project (route parameter).</param>
+        /// <param name="userId">The unique identifier of the member whose role is to be updated (route parameter).</param>
+        /// <param name="dto">Request body containing the new project role.</param>
+        /// <returns>
+        /// <see cref="NoContentResult"/> on success;
+        /// <see cref="UnauthorizedResult"/> when the caller is not authenticated;
+        /// <see cref="ForbidResult"/> when the caller lacks permission or role hierarchy rules are violated;
+        /// <see cref="NotFoundResult"/> when the target user or the caller is not a project member;
+        /// <see cref="StatusCodeResult"/> 500 with <see cref="ErrorMessageResponse"/> on repository failure.
+        /// </returns>
+        /// <response code="204">Project role updated successfully.</response>
+        /// <response code="401">The request is not authenticated.</response>
+        /// <response code="403">The caller lacks permission or role hierarchy rules prevent this update.</response>
+        /// <response code="404">The target user or the calling user is not a member of the project.</response>
+        /// <response code="500">Repository or infrastructure failure. Response body contains the error description.</response>
         [HttpPatch("{userId}", Name = "UpdateUserInProject")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -98,9 +183,9 @@ namespace neco_board_ce.Controllers.API
             var result = await _repository.GetByUserAndProject(userId, projectId);
             if(!result.Success)
             {
-                _logger.LogError("Failed to retrieve all users in project {ProjectId}: {Error}", projectId, result.Message ?? "unknown error");
+                _logger.LogError("Failed to retrieve membership record for user '{TargetUserId}' in project '{ProjectId}': {Error}", userId, projectId, result.Message ?? "unknown error");
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    new ErrorMessageResponse { Message = "Unable to retrieve the user list. Please try again later." });
+                    new ErrorMessageResponse { Message = "Unable to retrieve the user's project membership. Please try again later." });
             }
             if (result.Data is null) return NotFound();
 
@@ -125,11 +210,37 @@ namespace neco_board_ce.Controllers.API
                 return NoContent();
             }
 
-            _logger.LogError("Failed to retrieve all users in project {ProjectId}: {Error}", projectId, result.Message ?? "unknown error");
+            _logger.LogError("Failed to update project role for user '{TargetUserId}' in project '{ProjectId}': {Error}", userId, projectId, editResult.Message ?? "unknown error");
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new ErrorMessageResponse { Message = "Unable to retrieve the user list. Please try again later." });
+                new ErrorMessageResponse { Message = "Failed to update the user's project role. Please try again later." });
         }
 
+        /// <summary>
+        /// Removes a user from the project.
+        /// </summary>
+        /// <remarks>
+        /// Requires at least the <c>MODERATOR</c> role in the project, or workspace administrator privileges.
+        /// When the caller is not a workspace administrator, the same role hierarchy rules as
+        /// <c>UpdateUserInProject</c> apply — an <c>OWNER</c> cannot be removed, and a moderator
+        /// cannot remove a peer or a higher-ranked member.
+        /// Returns <c>404</c> when the target user or the calling user is not a member of the project.
+        /// On success, broadcasts <c>SOKET_EVENT_USER_REMOVED_FROM_PROJECT</c> to both
+        /// the project group and the removed user's personal connection.
+        /// </remarks>
+        /// <param name="projectId">The unique identifier of the project (route parameter).</param>
+        /// <param name="userId">The unique identifier of the member to remove (route parameter).</param>
+        /// <returns>
+        /// <see cref="NoContentResult"/> on success;
+        /// <see cref="UnauthorizedResult"/> when the caller is not authenticated;
+        /// <see cref="ForbidResult"/> when the caller lacks permission or role hierarchy rules are violated;
+        /// <see cref="NotFoundResult"/> when the target user or the caller is not a project member;
+        /// <see cref="StatusCodeResult"/> 500 with <see cref="ErrorMessageResponse"/> on repository failure.
+        /// </returns>
+        /// <response code="204">User removed from the project successfully.</response>
+        /// <response code="401">The request is not authenticated.</response>
+        /// <response code="403">The caller lacks permission or role hierarchy rules prevent this removal.</response>
+        /// <response code="404">The target user or the calling user is not a member of the project.</response>
+        /// <response code="500">Repository or infrastructure failure. Response body contains the error description.</response>
         [HttpDelete("{userId}", Name = "RemoveUserFromProject")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -145,9 +256,9 @@ namespace neco_board_ce.Controllers.API
             var result = await _repository.GetByUserAndProject(userId, projectId);
             if (!result.Success)
             {
-                _logger.LogError("Failed to retrieve all users in project {ProjectId}: {Error}", projectId, result.Message ?? "unknown error");
+                _logger.LogError("Failed to retrieve membership record for user '{TargetUserId}' in project '{ProjectId}': {Error}", userId, projectId, result.Message ?? "unknown error");
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    new ErrorMessageResponse { Message = "Unable to retrieve the user list. Please try again later." });
+                    new ErrorMessageResponse { Message = "Unable to retrieve the user's project membership. Please try again later." });
             }
             if (result.Data is null) return NotFound();
 
@@ -172,9 +283,9 @@ namespace neco_board_ce.Controllers.API
                 return NoContent();
             }
 
-            _logger.LogError("Failed to retrieve all users in project {ProjectId}: {Error}", projectId, result.Message ?? "unknown error");
+            _logger.LogError("Failed to remove user '{TargetUserId}' from project '{ProjectId}': {Error}", userId, projectId, removingResult.Message ?? "unknown error");
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new ErrorMessageResponse { Message = "Unable to retrieve the user list. Please try again later." });
+                new ErrorMessageResponse { Message = "Failed to remove the user from the project. Please try again later." });
         }
     }
 }
