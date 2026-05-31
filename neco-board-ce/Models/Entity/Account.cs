@@ -21,13 +21,11 @@ namespace neco_board_ce.Models.Entity
         [Column("avatar")]
         public string? Avatar { get; set; }
         
-        [Required]
         [MaxLength(50)]
         [Column("login")]
         [JsonIgnore]
         public string Login { get; set; }
-        
-        [Required]
+
         [MaxLength(500)]
         [Column("password")]
         [JsonIgnore]

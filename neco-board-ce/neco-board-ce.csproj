@@ -7,6 +7,8 @@
     <RootNamespace>neco_board_ce</RootNamespace>
     <UserSecretsId>6aaeb790-c672-48c7-8ac8-20fa4e851c3e</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
