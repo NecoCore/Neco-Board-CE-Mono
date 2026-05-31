@@ -18,26 +18,20 @@ namespace neco_board_ce.Controllers.API
     {
         private readonly ILogger<UserController> _logger;
         private readonly AccountRepository _repository;
-        private readonly UserProjectRoleRepository _userProjectReposirory;
         private readonly ProjectRepository _projectRepository;
         private readonly TaskUserRepository _taskUserRepository;
-        private readonly UserAccessCheck _userAccess;
 
         public UserController(
             ILogger<UserController> logger, 
-            AccountRepository repository, 
-            UserProjectRoleRepository userProjectRepository, 
+            AccountRepository repository,
             ProjectRepository projectRepository, 
-            TaskUserRepository taskUserRepository,
-            UserAccessCheck userAccess
+            TaskUserRepository taskUserRepository
             )
         {
             _logger = logger;
             _repository = repository;
-            _userProjectReposirory = userProjectRepository;
             _projectRepository = projectRepository;
             _taskUserRepository = taskUserRepository;
-            _userAccess = userAccess;
         }
 
         [HttpGet(Name = "GetAllUsers")]
