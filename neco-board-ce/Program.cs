@@ -71,8 +71,12 @@ builder.Services.AddControllers()
     });
 
 // Register SignalR (WebSoket)
-builder.Services.AddSignalR();
-builder.Services.AddSignalRCore();
+builder.Services.AddSignalR()
+    .AddJsonProtocol(options =>
+    {
+        options.PayloadSerializerOptions.Converters
+            .Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 
 // Register database context with dynamic provider based on configuration
 AppConfig.GetDatabase(builder.Services, builder.Configuration);
