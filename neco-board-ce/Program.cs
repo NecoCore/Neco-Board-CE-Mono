@@ -236,7 +236,6 @@ if (app.Environment.IsDevelopment())
         }
     });
 
-    // Simple HTML viewer for the raw XML documentation served at /docs/full
     app.MapGet("/docs/full", () => Results.Content(DocsXmlUi.Html, "text/html"));
 }
 else

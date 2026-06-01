@@ -1,7 +1,7 @@
 namespace neco_board_ce.Utils.Docs
 {
     /// <summary>
-    /// Self-contained HTML viewer for the generated XML documentation served at <c>/docs/full</c>.
+    /// Self-contained HTML viewer for the generated XML documentation served at <c>/docs/full/raw</c>.
     /// No external dependencies: it fetches the raw XML in the browser, parses it and renders
     /// members grouped by type, with a live search box.
     /// </summary>
@@ -116,8 +116,8 @@ function renderType(fullName, info){
 async function load(){
   const main = document.getElementById('content');
   let res;
-  try { res = await fetch('/docs/full'); } catch { main.textContent = 'Could not reach /docs/full'; return; }
-  if (!res.ok){ main.textContent = '/docs/full returned ' + res.status; return; }
+  try { res = await fetch('/docs/full/raw'); } catch { main.textContent = 'Could not reach /docs/full/raw'; return; }
+  if (!res.ok){ main.textContent = '/docs/full/raw returned ' + res.status; return; }
 
   const xml = new DOMParser().parseFromString(await res.text(), 'application/xml');
   if (xml.querySelector('parsererror')){ main.textContent = 'Failed to parse XML'; return; }
