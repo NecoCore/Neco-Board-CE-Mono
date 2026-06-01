@@ -249,8 +249,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-app.MapHub<ProjectHub>("/conn/projects");
-app.MapHub<TaskHub>("/conn/task");
-app.MapHub<AppHub>("/conn/app");
+app.MapHub<AppHub>("/conn");
 
 app.Run();
