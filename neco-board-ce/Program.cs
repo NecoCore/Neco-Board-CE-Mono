@@ -7,6 +7,8 @@ using neco_board_ce.Data;
 using neco_board_ce.Repositories.Tables;
 using neco_board_ce.Services.Authentication;
 using neco_board_ce.Utils.Check;
+using neco_board_ce.Utils.Docs;
+using Saunter;
 using Scalar.AspNetCore;
 
 DotNetEnv.Env.Load();
@@ -177,6 +179,14 @@ builder.Services.AddOpenApi(options =>
 
 });
 
+// AsyncAPI
+builder.Services.AddAsyncApiSchemaGeneration(options =>
+{
+    options.Middleware.Route = "/docs/sockets/asyncapi.json";
+    options.Middleware.UiBaseRoute = "/docs/socket/";
+    options.Middleware.UiTitle = "Board CE sockets";
+});
+
 // Ports
 builder.WebHost.UseUrls(
     $"http://{builder.Configuration["App:Host"] ?? "*"}:{builder.Configuration["App:Port"] ?? "8080"}"
@@ -199,8 +209,35 @@ await using (var scope = app.Services.CreateAsyncScope())
 if (app.Environment.IsDevelopment())
 {
     app.UseCors("DevCors");
+
     app.MapOpenApi();
-    app.MapScalarApiReference();
+    app.MapScalarApiReference("/docs/rest", options =>
+    {
+        options.Title = "Board CE REST API";
+    });
+
+    app.MapAsyncApiDocuments();
+    app.MapAsyncApiUi();
+
+    app.MapGet("/docs/full/raw", async context =>
+    {
+        var xmlFileName = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+        var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFileName);
+
+        if (File.Exists(xmlPath))
+        {
+            context.Response.ContentType = "application/xml";
+            await context.Response.SendFileAsync(xmlPath);
+        }
+        else
+        {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            await context.Response.WriteAsync("XML documentation not found. Ensure <GenerateDocumentationFile>true</GenerateDocumentationFile> is set in .csproj");
+        }
+    });
+
+    // Simple HTML viewer for the raw XML documentation served at /docs/full
+    app.MapGet("/docs/full", () => Results.Content(DocsXmlUi.Html, "text/html"));
 }
 else
 {
