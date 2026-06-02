@@ -4,7 +4,7 @@
     {
         public static string Project(string id) => $"project:{id}";
         public static string Task(string id) => $"task:{id}";
-        public static string All = "all";
-        public static string Admins = "AdminsGroup";
+        public const string All = "all";
+        public const string Admins = "AdminsGroup";
     }
 }
