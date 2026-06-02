@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
-using neco_board_ce.Controllers.Hubs;
-using neco_board_ce.Data;
+using neco_board_ce.Interfaces;
 using neco_board_ce.Models.DTO.Request;
 using neco_board_ce.Models.DTO.Response.Massages;
 using neco_board_ce.Models.DTO.Response.Projects;
@@ -10,7 +8,6 @@ using neco_board_ce.Models.Entity;
 using neco_board_ce.Repositories.Tables;
 using neco_board_ce.Utils.Check;
 using neco_board_ce.Utils.Controllers;
-using System.Security.Claims;
 
 namespace neco_board_ce.Controllers.API
 {
@@ -34,24 +31,21 @@ namespace neco_board_ce.Controllers.API
         private readonly ILogger<ProjectController> _logger;
         private readonly ProjectRepository _repository;
         private readonly UserProjectRoleRepository _userProjectReposirory;
-        private readonly IHubContext<AppHub> _appHubContext;
-        private readonly IHubContext<ProjectHub> _projectHubContext;
+        private readonly IRealtimeNotifier _notifier;
         private readonly UserAccessCheck _userAccess;
 
         public ProjectController(
             ILogger<ProjectController> logger,
             ProjectRepository repository,
             UserProjectRoleRepository userProject,
-            IHubContext<AppHub> appHubContext,
-            IHubContext<ProjectHub> projectHubContext,
+            IRealtimeNotifier notifier,
             UserAccessCheck userAccess
             )
         {
             _logger = logger;
             _repository = repository;
+            _notifier = notifier;
             _userProjectReposirory = userProject;
-            _appHubContext = appHubContext;
-            _projectHubContext = projectHubContext;
             _userAccess = userAccess;
         }
 
@@ -195,12 +189,8 @@ namespace neco_board_ce.Controllers.API
             {
                 _logger.LogWarning("Failed to assign OWNER role to user '{UserId}' in project '{ProjectId}': {Error}", UserId, project.Id, createdResult.Message ?? "unknown error");
             }
-            else
-            {
-                await _appHubContext.Clients.User(UserId!).SendAsync(Constants.SOKET_EVENT_PROJECT_CREATED);
-            }
 
-            await _appHubContext.Clients.Group(Constants.GROUP_ADMINS).SendAsync(Constants.SOKET_EVENT_PROJECT_CREATED);
+            await _notifier.ProjectCreated();
             return Ok(new CreateProjectRequest { ProjectId = project.Id });
         }
 
@@ -245,8 +235,7 @@ namespace neco_board_ce.Controllers.API
             var result = await _repository.Update(id, project);
             if (result.Success)
             {
-                await _projectHubContext.Clients.Group(id).SendAsync(Constants.SOKET_EVENT_PROJECT_UPDATED);
-                await _appHubContext.Clients.Group(Constants.GROUP_ADMINS).SendAsync(Constants.SOKET_EVENT_PROJECT_UPDATED, id);
+                await _notifier.ProjectUpdated(id, dto.Name);
                 return NoContent();
             }
 
@@ -289,8 +278,7 @@ namespace neco_board_ce.Controllers.API
             var result = await _repository.Delete(id);
             if (result.Success)
             {
-                await _projectHubContext.Clients.Group(id).SendAsync(Constants.SOKET_EVENT_PROJECT_DELETED);
-                await _appHubContext.Clients.Group(Constants.GROUP_ALL).SendAsync(Constants.SOKET_EVENT_PROJECT_DELETED, id);
+                await _notifier.ProjectDeleted(id);
                 return NoContent();
             }
 
