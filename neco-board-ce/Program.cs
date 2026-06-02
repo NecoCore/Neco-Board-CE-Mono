@@ -4,8 +4,10 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using neco_board_ce.Controllers.Hubs;
 using neco_board_ce.Data;
+using neco_board_ce.Interfaces;
 using neco_board_ce.Repositories.Tables;
 using neco_board_ce.Services.Authentication;
+using neco_board_ce.Services.Realtime;
 using neco_board_ce.Utils.Check;
 using neco_board_ce.Utils.Docs;
 using Saunter;
@@ -131,6 +133,7 @@ builder.Services.AddScoped<LogsRepository>();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<UserAccessCheck>();
+builder.Services.AddSingleton<IRealtimeNotifier, RealtimeNotifier>();
 
 // Open API
 builder.Services.AddOpenApi(options =>
