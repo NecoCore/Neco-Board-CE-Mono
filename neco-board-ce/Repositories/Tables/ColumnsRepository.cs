@@ -84,7 +84,7 @@ namespace neco_board_ce.Repositories.Tables
 
             _db.Columns.Update(existing);
             var saved = await _db.SaveChangesAsync() > 0;
-            return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to update column." };
+            return new RepositoryResult<bool> { Success = saved, Message = saved ? existing.Id : "Failed to update column." };
         }
 
         public async Task<RepositoryResult<bool>> UpdateOrder(string projectId, string id, int newOrder)
