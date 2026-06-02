@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using neco_board_ce.Controllers.Hubs;
 using neco_board_ce.Data;
+using neco_board_ce.Interfaces;
 using neco_board_ce.Models.DTO.Request;
 using neco_board_ce.Models.DTO.Response.Column;
 using neco_board_ce.Models.DTO.Response.Massages;
@@ -33,20 +34,20 @@ namespace neco_board_ce.Controllers.API
     {
         private readonly ILogger<ColumsProjectController> _logger;
         private readonly ColumnsRepository _repository;
-        private readonly IHubContext<ProjectHub> _projectHubContext;
+        private readonly IRealtimeNotifier _notifier;
         private readonly UserAccessCheck _userAccess;
 
         public ColumsProjectController(
             ILogger<ColumsProjectController> logger,
             ColumnsRepository repository,
-            IHubContext<ProjectHub> projectHubContext,
+            IRealtimeNotifier notifier,
             UserAccessCheck userAccess
             )
         {
             _logger = logger;
             _repository = repository;
             _userAccess = userAccess;
-            _projectHubContext = projectHubContext;
+            _notifier = notifier;
         }
 
         /// <summary>
@@ -150,7 +151,7 @@ namespace neco_board_ce.Controllers.API
             var createResult = await _repository.Create(newColumn);
             if (createResult.Success)
             {
-                await _projectHubContext.Clients.Group(projectId).SendAsync(Constants.SOKET_EVENT_COLUMN_CREATED);
+                await _notifier.ColumnCreated(projectId);
                 return NoContent();
             }
             _logger.LogError("Failed to create column in project '{ProjectId}': {Error}", projectId, createResult.Message ?? "unknown error");
@@ -197,7 +198,7 @@ namespace neco_board_ce.Controllers.API
 
             if (updateResult.Success)
             {
-                await _projectHubContext.Clients.Group(accessResult.ProjectId!).SendAsync(Constants.SOKET_EVENT_COLUMN_UPDATED);
+                await _notifier.ColumnUpdated(accessResult.ProjectId!, updateResult.Message!, dto.Name);
                 return NoContent();
             }
 
@@ -242,7 +243,7 @@ namespace neco_board_ce.Controllers.API
             var result = await _repository.UpdateOrder(accessResult.ProjectId!, columnId, queue);
             if (result.Success)
             {
-                await _projectHubContext.Clients.Group(accessResult.ProjectId!).SendAsync(Constants.SOKET_EVENT_COLUMN_UPDATED_ORDER);
+                await _notifier.ColumnOrderUpdated(accessResult.ProjectId!);
                 return Ok();
             }
 
@@ -287,7 +288,7 @@ namespace neco_board_ce.Controllers.API
             var result = await _repository.Delete(columnId);
             if (result.Success)
             {
-                await _projectHubContext.Clients.Group(projectId).SendAsync(Constants.SOKET_EVENT_COLUMN_DELETED);
+                await _notifier.ColumnDelete(projectId, columnId);
                 return NoContent();
             }
 
