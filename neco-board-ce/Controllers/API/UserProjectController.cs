@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using neco_board_ce.Controllers.Hubs;
 using neco_board_ce.Data;
+using neco_board_ce.Interfaces;
 using neco_board_ce.Models.DTO.Request;
 using neco_board_ce.Models.DTO.Response.Massages;
 using neco_board_ce.Models.DTO.Response.Users;
@@ -32,18 +33,18 @@ namespace neco_board_ce.Controllers.API
     {
         private readonly ILogger<UserProjectController> _logger;
         private readonly UserProjectRoleRepository _repository;
-        private readonly IHubContext<ProjectHub> _projectHubContext;
+        private readonly IRealtimeNotifier _notifier;
         private readonly UserAccessCheck _userAccess;
 
         public UserProjectController(
             ILogger<UserProjectController> logger,
             UserProjectRoleRepository repository,
-            IHubContext<ProjectHub> projectHubContext,
+            IRealtimeNotifier notifier,
             UserAccessCheck userAccess
         ) {
             _logger = logger;
             _repository = repository;
-            _projectHubContext = projectHubContext;
+            _notifier = notifier;
             _userAccess = userAccess;
         }
 
@@ -130,8 +131,7 @@ namespace neco_board_ce.Controllers.API
             var result = await _repository.AddToProject(dto.Id, projectId, dto.Role);
             if (result.Success)
             {
-                await _projectHubContext.Clients.Group(projectId).SendAsync(Constants.SOKET_EVENT_USER_ADDED_TO_PROJECT);
-                await _projectHubContext.Clients.User(dto.Id).SendAsync(Constants.SOKET_EVENT_PROJECT_CREATED);
+                await _notifier.ProjectAddUser(projectId, dto.Id);
                 return NoContent();
             }
 
@@ -208,8 +208,7 @@ namespace neco_board_ce.Controllers.API
             var editResult = await _repository.UpdateRole(userId, projectId, dto.Role);
             if (editResult.Success)
             {
-                await _projectHubContext.Clients.Group(projectId).SendAsync(Constants.SOKET_EVENT_USER_ROLE_UPDATED_IN_PROJECT, userId);
-                await _projectHubContext.Clients.User(userId).SendAsync(Constants.SOKET_EVENT_USER_ROLE_UPDATED_IN_PROJECT, userId);
+                await _notifier.ProjectUpdateUser(projectId, userId, dto.Role);
                 return NoContent();
             }
 
@@ -282,8 +281,7 @@ namespace neco_board_ce.Controllers.API
             var removingResult = await _repository.RemoveFromProject(userId, projectId);
             if (removingResult.Success)
             {
-                await _projectHubContext.Clients.Group(projectId).SendAsync(Constants.SOKET_EVENT_USER_REMOVED_FROM_PROJECT, userId);
-                await _projectHubContext.Clients.User(userId).SendAsync(Constants.SOKET_EVENT_USER_REMOVED_FROM_PROJECT, userId);
+                await _notifier.ProjectRemoveUser(projectId, userId);
                 return NoContent();
             }
 
