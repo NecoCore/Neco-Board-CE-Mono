@@ -189,9 +189,17 @@ builder.Services.AddOpenApi(options =>
 // AsyncAPI
 builder.Services.AddAsyncApiSchemaGeneration(options =>
 {
-    options.Middleware.Route = "/docs/sockets/asyncapi.json";
-    options.Middleware.UiBaseRoute = "/docs/socket/";
-    options.Middleware.UiTitle = "Board CE sockets";
+    // Tell Saunter which assembly to scan for [AsyncApi]-annotated types (AppSocketDocs).
+    options.AssemblyMarkerTypes = new[] { typeof(AppSocketDocs) };
+
+    // Required top-level "info" — without it the document is invalid and the UI cannot render.
+    options.AsyncApi = new Saunter.AsyncApiSchema.v2.AsyncApiDocument
+    {
+        Info = new Saunter.AsyncApiSchema.v2.Info("Board CE Sockets", "v0.2.1-beta")
+        {
+            Description = "Realtime SignalR events pushed by the server to clients."
+        }
+    };
 });
 
 // Ports
@@ -224,7 +232,9 @@ if (app.Environment.IsDevelopment())
     });
 
     app.MapAsyncApiDocuments();
-    app.MapAsyncApiUi();
+    // Saunter's bundled UI (asyncapi-react 1.0.1) can't render the 2.4.0 document it generates,
+    // so we serve our own page with a modern asyncapi-react from a CDN.
+    app.MapGet("/docs/socket", () => Results.Content(AsyncApiUi.Html, "text/html"));
 
     app.MapGet("/docs/full/raw", async context =>
     {
