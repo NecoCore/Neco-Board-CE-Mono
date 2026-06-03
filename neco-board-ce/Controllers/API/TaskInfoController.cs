@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using neco_board_ce.Controllers.Hubs;
 using neco_board_ce.Data;
+using neco_board_ce.Interfaces;
 using neco_board_ce.Models.DTO.Request.Tasks;
 using neco_board_ce.Models.DTO.Response.Massages;
 using neco_board_ce.Models.DTO.Response.Task;
@@ -35,17 +35,20 @@ namespace neco_board_ce.Controllers.API
         private readonly ColumnTaskRepository _repository;
         private readonly TaskUserRepository _taskUserRepository;
         private readonly UserAccessCheck _userAccess;
-        private readonly IHubContext<TaskHub> _taskHubContext;
-        private readonly IHubContext<ProjectHub> _projectHubContext;
+        private readonly IRealtimeNotifier _notifier;
 
-        public TaskInfoController(ILogger<TaskInfoController> logger, UserAccessCheck userAccess, ColumnTaskRepository repository, TaskUserRepository taskUserRepository, IHubContext<TaskHub> taskHubContext, IHubContext<ProjectHub> projectHubContext)
+        public TaskInfoController(
+            ILogger<TaskInfoController> logger, 
+            UserAccessCheck userAccess, 
+            ColumnTaskRepository repository, 
+            TaskUserRepository taskUserRepository, 
+            IRealtimeNotifier notifier)
         {
             _logger = logger;
             _repository = repository;
             _userAccess = userAccess;
             _taskUserRepository = taskUserRepository;
-            _taskHubContext = taskHubContext;
-            _projectHubContext = projectHubContext;
+            _notifier = notifier;
         }
 
         /// <summary>
@@ -85,8 +88,7 @@ namespace neco_board_ce.Controllers.API
 
             if (result.Success)
             {
-                await _taskHubContext.Clients.Group(taskId).SendAsync(Constants.SOKET_EVENT_TASK_STATUS_UPDATED);
-                await _projectHubContext.Clients.Group(accessResult.ProjectId!).SendAsync(Constants.SOKET_EVENT_TASK_STATUS_UPDATED, result.Data!);
+                await _notifier.TaskStatusUpdated(accessResult.ProjectId!, taskId, result.Data!, dto.Status);
                 return Ok();
             }
             _logger.LogError("Failed to update status in {taskId}: {error}", taskId, result.Message ?? "unknown error");
@@ -131,12 +133,7 @@ namespace neco_board_ce.Controllers.API
 
             if (result.Success)
             {
-                await _taskHubContext.Clients.Group(taskId).SendAsync(Constants.SOKET_EVENT_TASK_PRIORITY_UPDATED);
-                await _projectHubContext.Clients.Group(accessResult.ProjectId!).SendAsync(Constants.SOKET_EVENT_TASK_PRIORITY_UPDATED, new EditTaskSocketResponse
-                {
-                    TaskId = taskId,
-                    ColumnId = result.Data!
-                });
+                await _notifier.TaskPriorityUpdated(accessResult.ProjectId!, taskId, result.Data!, dto.Priority);
                 return Ok();
             }
             _logger.LogError("Failed to update priority in {taskId}: {error}", taskId, result.Message ?? "unknown error");
@@ -240,7 +237,7 @@ namespace neco_board_ce.Controllers.API
 
             if (result.Success)
             {
-                await _taskHubContext.Clients.Group(taskId).SendAsync(Constants.SOKET_EVENT_TASK_USER_ADDED);
+                await _notifier.TaskAddUser(taskId);
                 return Ok();
             }
             _logger.LogError("Failed to update user in {taskId}: {error}", taskId, result.Message ?? "unknown error");
@@ -305,7 +302,7 @@ namespace neco_board_ce.Controllers.API
 
             if (result.Success)
             {
-                await _taskHubContext.Clients.Group(taskId).SendAsync(Constants.SOKET_EVENT_TASK_USER_REMOVED);
+                await _notifier.TaskRemoveUser(taskId, targetUserId);
                 return Ok();
             }
             _logger.LogError("Failed to delete user from {taskId}: {error}", taskId, result.Message ?? "unknown error");
