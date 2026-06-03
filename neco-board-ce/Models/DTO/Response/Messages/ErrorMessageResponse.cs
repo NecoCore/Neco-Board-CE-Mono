@@ -1,4 +1,4 @@
-﻿namespace neco_board_ce.Models.DTO.Response.Massages
+﻿namespace neco_board_ce.Models.DTO.Response.Messages
 {
     public class ErrorMessageResponse
     {

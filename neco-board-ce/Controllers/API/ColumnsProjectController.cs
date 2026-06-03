@@ -6,7 +6,7 @@ using neco_board_ce.Data;
 using neco_board_ce.Interfaces;
 using neco_board_ce.Models.DTO.Request;
 using neco_board_ce.Models.DTO.Response.Column;
-using neco_board_ce.Models.DTO.Response.Massages;
+using neco_board_ce.Models.DTO.Response.Messages;
 using neco_board_ce.Models.Entity;
 using neco_board_ce.Models.Enums;
 using neco_board_ce.Repositories.Tables;
@@ -30,15 +30,15 @@ namespace neco_board_ce.Controllers.API
     [Authorize]
     [Route("api/column")]
     [Tags("Project columns")]
-    public class ColumsProjectController : UserAuth
+    public class ColumnsProjectController : UserAuth
     {
-        private readonly ILogger<ColumsProjectController> _logger;
+        private readonly ILogger<ColumnsProjectController> _logger;
         private readonly ColumnsRepository _repository;
         private readonly IRealtimeNotifier _notifier;
         private readonly UserAccessCheck _userAccess;
 
-        public ColumsProjectController(
-            ILogger<ColumsProjectController> logger,
+        public ColumnsProjectController(
+            ILogger<ColumnsProjectController> logger,
             ColumnsRepository repository,
             IRealtimeNotifier notifier,
             UserAccessCheck userAccess
@@ -105,7 +105,7 @@ namespace neco_board_ce.Controllers.API
         /// or <c>1</c> if the project currently has no columns.
         /// The existing column list is fetched first; if that fetch fails (<c>400</c>) or returns
         /// no data (<c>404</c>), the creation is aborted.
-        /// On success, broadcasts <c>SOKET_EVENT_COLUMN_CREATED</c> to the project's SignalR group.
+        /// On success, broadcasts <c>SOCKET_EVENT_COLUMN_CREATED</c> to the project's SignalR group.
         /// </remarks>
         /// <param name="projectId">The unique identifier of the project to add the column to.</param>
         /// <param name="dto">Request body containing the name of the new column.</param>
@@ -166,7 +166,7 @@ namespace neco_board_ce.Controllers.API
         /// Updates the name of an existing column.
         /// Requires at least the <c>MODERATOR</c> role in the column's parent project,
         /// or workspace administrator privileges.
-        /// On success, broadcasts <c>SOKET_EVENT_COLUMN_UPDATED</c> to the project's SignalR group.
+        /// On success, broadcasts <c>SOCKET_EVENT_COLUMN_UPDATED</c> to the project's SignalR group.
         /// </remarks>
         /// <param name="columnId">The unique identifier of the column to update.</param>
         /// <param name="dto">Request body containing the new column name.</param>
@@ -216,7 +216,7 @@ namespace neco_board_ce.Controllers.API
         /// or workspace administrator privileges.
         /// The project ID is resolved internally from the access check result and passed
         /// directly to the repository — it is not required in the request.
-        /// On success, broadcasts <c>SOKET_EVENT_COLUMN_UPDATED_ORDER</c> to the project's SignalR group.
+        /// On success, broadcasts <c>SOCKET_EVENT_COLUMN_UPDATED_ORDER</c> to the project's SignalR group.
         /// </remarks>
         /// <param name="columnId">The unique identifier of the column to reorder.</param>
         /// <param name="queue">The new queue position (display order index) for the column.</param>
@@ -261,7 +261,7 @@ namespace neco_board_ce.Controllers.API
         /// or workspace administrator privileges.
         /// <paramref name="projectId"/> is a query string parameter used to resolve
         /// project membership and to target the SignalR broadcast group.
-        /// On success, broadcasts <c>SOKET_EVENT_COLUMN_DELETED</c> to the project's SignalR group.
+        /// On success, broadcasts <c>SOCKET_EVENT_COLUMN_DELETED</c> to the project's SignalR group.
         /// </remarks>
         /// <param name="columnId">The unique identifier of the column to delete (route parameter).</param>
         /// <param name="projectId">The unique identifier of the parent project (query parameter).</param>

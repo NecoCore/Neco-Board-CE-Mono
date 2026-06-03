@@ -80,7 +80,7 @@ namespace neco_board_ce.Services.Authentication
                 }
                 catch (DbUpdateConcurrencyException err)
                 {
-                    _logger.LogError("Failed to delete expires refresh token: {}", err.Message);
+                    _logger.LogError("Failed to delete expired refresh token: {}", err.Message);
                 }
 
                 return new AuthResult(false, Error: "Invalid or expired refresh token");
@@ -93,7 +93,7 @@ namespace neco_board_ce.Services.Authentication
             }
             catch (DbUpdateConcurrencyException err)
             {
-                _logger.LogWarning("Failed to delete refresh token after cheks: {}", err.Message);
+                _logger.LogWarning("Failed to delete refresh token after checks: {}", err.Message);
                 return new AuthResult(false, Error: "Token was already used by another concurrent request");
             }
 

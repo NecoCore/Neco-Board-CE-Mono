@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using neco_board_ce.Interfaces;
 using neco_board_ce.Models.DTO.Request;
-using neco_board_ce.Models.DTO.Response.Massages;
+using neco_board_ce.Models.DTO.Response.Messages;
 using neco_board_ce.Models.DTO.Response.Projects;
 using neco_board_ce.Models.Entity;
 using neco_board_ce.Repositories.Tables;
@@ -146,7 +146,7 @@ namespace neco_board_ce.Controllers.API
         /// and the first member with the <c>OWNER</c> role via <c>UserProjectRoleRepository</c>.
         /// If the role-assignment step fails, a warning is logged but the endpoint still returns
         /// <c>200 OK</c> with the new project ID — the project itself was created successfully.
-        /// On success, broadcasts <c>SOKET_EVENT_PROJECT_CREATED</c> to the admins SignalR group
+        /// On success, broadcasts <c>SOCKET_EVENT_PROJECT_CREATED</c> to the admins SignalR group
         /// and, when role assignment succeeded, also to the creating user's personal connection.
         /// Returns <c>500</c> only when the project creation itself fails.
         /// </remarks>
@@ -199,7 +199,7 @@ namespace neco_board_ce.Controllers.API
         /// </summary>
         /// <remarks>
         /// Updates the name, description, and owner of an existing project. Restricted to administrators and owners.
-        /// On success, broadcasts the <c>SOKET_EVENT_PROJECT_UPDATED</c> SignalR event
+        /// On success, broadcasts the <c>SOCKET_EVENT_PROJECT_UPDATED</c> SignalR event
         /// to both the project's own group and the global admins group.
         /// The admins group event carries the project ID as payload.
         /// When <c>dto.OwnerId</c> is <c>null</c>, the owner field is set to an empty string.
@@ -251,8 +251,8 @@ namespace neco_board_ce.Controllers.API
         /// Permanently deletes a project by its identifier. Restricted to administrators and owners.
         /// On success, broadcasts two SignalR events:
         /// <list type="bullet">
-        ///   <item><description><c>SOKET_EVENT_PROJECT_DELETED</c> — sent to the project's own group (notifies all project members).</description></item>
-        ///   <item><description><c>SOKET_EVENT_PROJECT_DELETED</c> — sent to the global all-users group with the project ID as payload.</description></item>
+        ///   <item><description><c>SOCKET_EVENT_PROJECT_DELETED</c> — sent to the project's own group (notifies all project members).</description></item>
+        ///   <item><description><c>SOCKET_EVENT_PROJECT_DELETED</c> — sent to the global all-users group with the project ID as payload.</description></item>
         /// </list>
         /// Returns <c>500</c> when the repository fails to delete the record.
         /// </remarks>

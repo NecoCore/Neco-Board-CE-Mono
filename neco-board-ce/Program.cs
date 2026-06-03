@@ -74,7 +74,7 @@ builder.Services.AddControllers()
         o.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 
-// Register SignalR (WebSoket)
+// Register SignalR (WebSocket)
 builder.Services.AddSignalR()
     .AddJsonProtocol(options =>
     {
@@ -146,7 +146,7 @@ builder.Services.AddOpenApi(options =>
         {
             Title = Constants.PROJECT_NAME,
             Version = Constants.VERSION,
-            Description = "Documentation for project menagment API"
+            Description = "Documentation for project management API"
         };
 
         document.Components ??= new();

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.SignalR;
 using neco_board_ce.Data;
 using neco_board_ce.Interfaces;
 using neco_board_ce.Models.DTO.Request.Tasks;
-using neco_board_ce.Models.DTO.Response.Massages;
+using neco_board_ce.Models.DTO.Response.Messages;
 using neco_board_ce.Models.DTO.Response.Task;
 using neco_board_ce.Models.Entity;
 using neco_board_ce.Models.Enums;
@@ -56,7 +56,7 @@ namespace neco_board_ce.Controllers.API
         /// </summary>
         /// <remarks>
         /// Updates the status of a task.
-        /// On success, broadcasts the <c>SOKET_EVENT_TASK_STATUS_UPDATED</c> SignalR event
+        /// On success, broadcasts the <c>SOCKET_EVENT_TASK_STATUS_UPDATED</c> SignalR event
         /// to both the task group (identified by <paramref name="taskId"/>) and the parent
         /// project group. The project group receives the new status value as the event payload.
         /// <br/><br/>
@@ -200,7 +200,7 @@ namespace neco_board_ce.Controllers.API
         ///   </item>
         /// </list>
         /// When <c>dto.UserId</c> is <c>null</c>, the currently authenticated user assigns themselves.
-        /// On success, broadcasts the <c>SOKET_EVENT_TASK_USER_ADDED</c> event to the task's SignalR group.
+        /// On success, broadcasts the <c>SOCKET_EVENT_TASK_USER_ADDED</c> event to the task's SignalR group.
         /// </remarks>
         /// <param name="taskId">The unique identifier of the task.</param>
         /// <param name="dto">
@@ -265,7 +265,7 @@ namespace neco_board_ce.Controllers.API
         ///   </item>
         /// </list>
         /// When <c>dto.UserId</c> is <c>null</c>, the currently authenticated user removes themselves.
-        /// On success, broadcasts the <c>SOKET_EVENT_TASK_USER_REMOVED</c> event to the task's SignalR group.
+        /// On success, broadcasts the <c>SOCKET_EVENT_TASK_USER_REMOVED</c> event to the task's SignalR group.
         /// </remarks>
         /// <param name="taskId">The unique identifier of the task.</param>
         /// <param name="dto">

@@ -5,7 +5,7 @@ using neco_board_ce.Data;
 using neco_board_ce.Interfaces;
 using neco_board_ce.Models.DTO.Request;
 using neco_board_ce.Models.DTO.Request.Tasks;
-using neco_board_ce.Models.DTO.Response.Massages;
+using neco_board_ce.Models.DTO.Response.Messages;
 using neco_board_ce.Models.DTO.Response.Task;
 using neco_board_ce.Models.Entity;
 using neco_board_ce.Models.Enums;
@@ -152,7 +152,7 @@ namespace neco_board_ce.Controllers.API
         /// The caller is automatically set as the task owner (<c>OwnerId</c>).
         /// Requires at least <see cref="ProjectRole.VIEWER"/> membership in the column's
         /// parent project, or workspace administrator privileges.
-        /// On success, broadcasts the <c>SOKET_EVENT_TASK_CREATED</c> SignalR event
+        /// On success, broadcasts the <c>SOCKET_EVENT_TASK_CREATED</c> SignalR event
         /// to the parent project group, passing the target column ID as the payload.
         /// </remarks>
         /// <param name="dto">Request body containing the column ID, name, description, and text of the new task.</param>
@@ -202,7 +202,7 @@ namespace neco_board_ce.Controllers.API
         /// column assignment, status, and priority are not affected by this endpoint.
         /// Requires at least <see cref="ProjectRole.VIEWER"/> membership in the task's
         /// parent project, or workspace administrator privileges.
-        /// On success, broadcasts the <c>SOKET_EVENT_TASK_UPDATED</c> SignalR event
+        /// On success, broadcasts the <c>SOCKET_EVENT_TASK_UPDATED</c> SignalR event
         /// to the parent project group with the task ID as the payload.
         /// </remarks>
         /// <param name="taskId">The unique identifier of the task to update.</param>
@@ -299,8 +299,8 @@ namespace neco_board_ce.Controllers.API
         /// parent project, or workspace administrator privileges.
         /// On success, two SignalR events are broadcast:
         /// <list type="bullet">
-        ///   <item><description><c>SOKET_EVENT_TASK_DELETED</c> — sent to the task's own group.</description></item>
-        ///   <item><description><c>SOKET_EVENT_TASK_PRIORITY_UPDATED</c> — sent to the project group with the task ID as payload.</description></item>
+        ///   <item><description><c>SOCKET_EVENT_TASK_DELETED</c> — sent to the task's own group.</description></item>
+        ///   <item><description><c>SOCKET_EVENT_TASK_PRIORITY_UPDATED</c> — sent to the project group with the task ID as payload.</description></item>
         /// </list>
         /// <paramref name="projectId"/> is passed as a query string parameter
         /// (not part of the route template) and is used to target the project SignalR group.

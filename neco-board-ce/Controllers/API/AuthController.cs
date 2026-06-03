@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using neco_board_ce.Models.DTO.Request;
 using neco_board_ce.Models.DTO.Response.Auth;
-using neco_board_ce.Models.DTO.Response.Massages;
+using neco_board_ce.Models.DTO.Response.Messages;
 using neco_board_ce.Services.Authentication;
 using System.Security.Claims;
 
@@ -19,7 +19,7 @@ namespace neco_board_ce.Controllers.API
     /// </remarks>
     [ApiController]
     [Route("api/[controller]")]
-    [Tags("Authification")]
+    [Tags("Authentication")]
     public class AuthController : ControllerBase
     {
         private readonly AuthService _authService;

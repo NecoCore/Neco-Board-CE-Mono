@@ -5,7 +5,7 @@ using neco_board_ce.Controllers.Hubs;
 using neco_board_ce.Data;
 using neco_board_ce.Interfaces;
 using neco_board_ce.Models.DTO.Request;
-using neco_board_ce.Models.DTO.Response.Massages;
+using neco_board_ce.Models.DTO.Response.Messages;
 using neco_board_ce.Models.DTO.Response.Users;
 using neco_board_ce.Models.Enums;
 using neco_board_ce.Repositories.Tables;
@@ -102,8 +102,8 @@ namespace neco_board_ce.Controllers.API
         /// Requires at least the <c>MODERATOR</c> role in the project, or workspace administrator privileges.
         /// On success, two SignalR events are broadcast:
         /// <list type="bullet">
-        ///   <item><description><c>SOKET_EVENT_USER_ADDED_TO_PROJECT</c> — sent to the project group.</description></item>
-        ///   <item><description><c>SOKET_EVENT_PROJECT_CREATED</c> — sent to the added user's personal connection to trigger a project list refresh.</description></item>
+        ///   <item><description><c>SOCKET_EVENT_USER_ADDED_TO_PROJECT</c> — sent to the project group.</description></item>
+        ///   <item><description><c>SOCKET_EVENT_PROJECT_CREATED</c> — sent to the added user's personal connection to trigger a project list refresh.</description></item>
         /// </list>
         /// </remarks>
         /// <param name="dto">Request body containing the target user ID and the role to assign.</param>
@@ -153,7 +153,7 @@ namespace neco_board_ce.Controllers.API
         ///   <item><description>The target user's role equals the caller's role — returns <c>403</c>.</description></item>
         /// </list>
         /// Returns <c>404</c> when the target user or the calling user is not a member of the project.
-        /// On success, broadcasts <c>SOKET_EVENT_USER_ROLE_UPDATED_IN_PROJECT</c> to both
+        /// On success, broadcasts <c>SOCKET_EVENT_USER_ROLE_UPDATED_IN_PROJECT</c> to both
         /// the project group and the affected user's personal connection.
         /// </remarks>
         /// <param name="projectId">The unique identifier of the project (route parameter).</param>
@@ -227,7 +227,7 @@ namespace neco_board_ce.Controllers.API
         /// <c>UpdateUserInProject</c> apply — an <c>OWNER</c> cannot be removed, and a moderator
         /// cannot remove a peer or a higher-ranked member.
         /// Returns <c>404</c> when the target user or the calling user is not a member of the project.
-        /// On success, broadcasts <c>SOKET_EVENT_USER_REMOVED_FROM_PROJECT</c> to both
+        /// On success, broadcasts <c>SOCKET_EVENT_USER_REMOVED_FROM_PROJECT</c> to both
         /// the project group and the removed user's personal connection.
         /// </remarks>
         /// <param name="projectId">The unique identifier of the project (route parameter).</param>

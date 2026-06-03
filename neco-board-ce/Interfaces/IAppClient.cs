@@ -82,20 +82,20 @@ namespace neco_board_ce.Interfaces
         #region Columns (always to the project:{id} group)
 
         /// <summary>A column was created.</summary>
-        /// <remarks>Source: <see cref="ColumsProjectController"/> (<c>POST /api/column/in-project/{projectId}</c>). No payload — the client refetches the column list.</remarks>
+        /// <remarks>Source: <see cref="ColumnsProjectController"/> (<c>POST /api/column/in-project/{projectId}</c>). No payload — the client refetches the column list.</remarks>
         Task ColumnCreated();
 
         /// <summary>A column was updated (renamed).</summary>
-        /// <remarks>Source: <see cref="ColumsProjectController"/> (<c>PUT /api/column/{columnId}</c>).</remarks>
+        /// <remarks>Source: <see cref="ColumnsProjectController"/> (<c>PUT /api/column/{columnId}</c>).</remarks>
         /// <param name="payload">Updated column id and name.</param>
         Task ColumnUpdated(ColumnUpdatedResponse payload);
 
         /// <summary>Column order changed.</summary>
-        /// <remarks>Source: <see cref="ColumsProjectController"/> (<c>PUT /api/column/{columnId}/order</c>). No payload — the client refetches the column order.</remarks>
+        /// <remarks>Source: <see cref="ColumnsProjectController"/> (<c>PUT /api/column/{columnId}/order</c>). No payload — the client refetches the column order.</remarks>
         Task ColumnUpdatedOrder();
 
         /// <summary>A column was deleted.</summary>
-        /// <remarks>Source: <see cref="ColumsProjectController"/> (<c>DELETE /api/column/{columnId}</c>).</remarks>
+        /// <remarks>Source: <see cref="ColumnsProjectController"/> (<c>DELETE /api/column/{columnId}</c>).</remarks>
         /// <param name="columnId">Id of the deleted column.</param>
         Task ColumnDeleted(string columnId);
 
