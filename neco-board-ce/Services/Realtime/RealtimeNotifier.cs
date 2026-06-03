@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using neco_board_ce.Controllers.Hubs;
 using neco_board_ce.Data;
 using neco_board_ce.Interfaces;
+using neco_board_ce.Models.DTO.Response.Socket;
 using neco_board_ce.Models.Enums;
 
 namespace neco_board_ce.Services.Realtime
@@ -24,10 +24,14 @@ namespace neco_board_ce.Services.Realtime
             _hub.Clients.Group(HubGroups.Admins).ProjectCreated();
 
 
-        public Task ProjectUpdated(string projectId, string projectName) => Task.WhenAll(
-            _hub.Clients.Group(HubGroups.Project(projectId)).ProjectUpdated(projectId, projectName),
-            _hub.Clients.Group(HubGroups.Admins).ProjectUpdated(projectId, projectName)
-        );
+        public Task ProjectUpdated(string projectId, string projectName)
+        {
+            var payload = new ProjectUpdatedResponse { Id = projectId, Name = projectName };
+            return Task.WhenAll(
+                _hub.Clients.Group(HubGroups.Project(projectId)).ProjectUpdated(payload),
+                _hub.Clients.Group(HubGroups.Admins).ProjectUpdated(payload)
+            );
+        }
 
         public Task ProjectDeleted(string projectId) => Task.WhenAll(
             _hub.Clients.Group(HubGroups.Project(projectId)).ProjectDeleted(projectId),
@@ -41,10 +45,14 @@ namespace neco_board_ce.Services.Realtime
             _hub.Clients.Group(HubGroups.Admins).UserAddedToProject(userId)
         );
 
-        public Task ProjectUpdateUser(string projectId, string userId, ProjectRole newRole) => Task.WhenAll(
-            _hub.Clients.Group(HubGroups.Project(projectId)).UserRoleUpdatedInProject(userId, newRole),
-            _hub.Clients.Group(HubGroups.Admins).UserRoleUpdatedInProject(userId, newRole)
-        );
+        public Task ProjectUpdateUser(string projectId, string userId, ProjectRole newRole)
+        {
+            var payload = new UserRoleUpdatedResponse { UserId = userId, Role = newRole };
+            return Task.WhenAll(
+                _hub.Clients.Group(HubGroups.Project(projectId)).UserRoleUpdatedInProject(payload),
+                _hub.Clients.Group(HubGroups.Admins).UserRoleUpdatedInProject(payload)
+            );
+        }
 
         public Task ProjectRemoveUser(string projectId, string userId) => Task.WhenAll(
             _hub.Clients.Group(HubGroups.Project(projectId)).UserRemovedFromProject(userId),
@@ -56,8 +64,9 @@ namespace neco_board_ce.Services.Realtime
         public Task ColumnCreated(string projectId) => Task.WhenAll(
             _hub.Clients.Group(HubGroups.Project(projectId)).ColumnCreated());
 
-        public Task ColumnUpdated(string projectId, string columnId, string columnName) => Task.WhenAll(
-            _hub.Clients.Group(HubGroups.Project(projectId)).ColumnUpdated(columnId, columnName));
+        public Task ColumnUpdated(string projectId, string columnId, string columnName) =>
+            _hub.Clients.Group(HubGroups.Project(projectId))
+                .ColumnUpdated(new ColumnUpdatedResponse { ColumnId = columnId, Name = columnName });
 
         public Task ColumnOrderUpdated(string projectId) => Task.WhenAll(
             _hub.Clients.Group(HubGroups.Project(projectId)).ColumnUpdatedOrder());
@@ -74,19 +83,32 @@ namespace neco_board_ce.Services.Realtime
             _hub.Clients.Group(HubGroups.Project(projectId)).TaskUpdated(taskId);
 
         public Task TaskColumnUpdated(string projectId, string oldColumnId, string newColumnId) =>
-            _hub.Clients.Group(HubGroups.Project(projectId)).TaskColumnUpdated(oldColumnId, newColumnId);
+            _hub.Clients.Group(HubGroups.Project(projectId))
+                .TaskColumnUpdated(new TaskColumnUpdatedResponse { OldColumnId = oldColumnId, NewColumnId = newColumnId });
 
-        public Task TaskStatusUpdated(string projectId, string taskId, string columnId, ColumnTaskStatus newStatus) => Task.WhenAll(
-            _hub.Clients.Group(HubGroups.Task(taskId)).TaskStatusUpdated(taskId, columnId, newStatus),
-            _hub.Clients.Group(HubGroups.Project(projectId)).TaskStatusUpdated(taskId, columnId, newStatus));
+        public Task TaskStatusUpdated(string projectId, string taskId, string columnId, ColumnTaskStatus newStatus)
+        {
+            var payload = new TaskStatusUpdatedResponse { TaskId = taskId, ColumnId = columnId, Status = newStatus };
+            return Task.WhenAll(
+                _hub.Clients.Group(HubGroups.Task(taskId)).TaskStatusUpdated(payload),
+                _hub.Clients.Group(HubGroups.Project(projectId)).TaskStatusUpdated(payload));
+        }
 
-        public Task TaskPriorityUpdated(string projectId, string taskId, string columnId, TaskPriority newPriority) => Task.WhenAll(
-            _hub.Clients.Group(HubGroups.Task(taskId)).TaskPriorityUpdated(taskId, columnId, newPriority),
-            _hub.Clients.Group(HubGroups.Project(projectId)).TaskPriorityUpdated(taskId, columnId, newPriority));
+        public Task TaskPriorityUpdated(string projectId, string taskId, string columnId, TaskPriority newPriority)
+        {
+            var payload = new TaskPriorityUpdatedResponse { TaskId = taskId, ColumnId = columnId, Priority = newPriority };
+            return Task.WhenAll(
+                _hub.Clients.Group(HubGroups.Task(taskId)).TaskPriorityUpdated(payload),
+                _hub.Clients.Group(HubGroups.Project(projectId)).TaskPriorityUpdated(payload));
+        }
 
-        public Task TaskDelete(string projectId, string columnId, string taskId) => Task.WhenAll(
-            _hub.Clients.Group(HubGroups.Task(taskId)).TaskDeleted(taskId, columnId),
-            _hub.Clients.Group(HubGroups.Project(projectId)).TaskDeleted(taskId, columnId));
+        public Task TaskDelete(string projectId, string columnId, string taskId)
+        {
+            var payload = new TaskDeletedResponse { TaskId = taskId, ColumnId = columnId };
+            return Task.WhenAll(
+                _hub.Clients.Group(HubGroups.Task(taskId)).TaskDeleted(payload),
+                _hub.Clients.Group(HubGroups.Project(projectId)).TaskDeleted(payload));
+        }
         #endregion
 
         #region Users in task
