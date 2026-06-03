@@ -56,7 +56,9 @@ else
         {
             options.AddPolicy("ProdCors", policy =>
             {
-                policy.AllowAnyOrigin()
+                // AllowAnyOrigin() cannot be combined with AllowCredentials() — ASP.NET Core
+                // throws on preflight. Reflect any origin instead so credentials stay allowed.
+                policy.SetIsOriginAllowed(_ => true)
                       .AllowAnyHeader()
                       .AllowAnyMethod()
                       .AllowCredentials();
