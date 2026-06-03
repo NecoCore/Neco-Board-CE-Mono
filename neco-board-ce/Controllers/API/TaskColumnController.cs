@@ -1,10 +1,8 @@
-﻿using Amazon.S3.Model;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using neco_board_ce.Controllers.Hubs;
 using neco_board_ce.Data;
+using neco_board_ce.Interfaces;
 using neco_board_ce.Models.DTO.Request;
 using neco_board_ce.Models.DTO.Request.Tasks;
 using neco_board_ce.Models.DTO.Response.Massages;
@@ -36,18 +34,21 @@ namespace neco_board_ce.Controllers.API
         private readonly ILogger<TaskColumnController> _logger;
         private readonly ColumnTaskRepository _repository;
         private readonly TaskUserRepository _taskUserRepository;
+        private readonly IRealtimeNotifier _notifier;
         private readonly UserAccessCheck _userAccess;
-        private readonly IHubContext<ProjectHub> _projectHubContext;
-        private readonly IHubContext<TaskHub> _taskHubContext;
 
-        public TaskColumnController(ILogger<TaskColumnController> logger, UserAccessCheck userAccess, ColumnTaskRepository repository, TaskUserRepository taskUserRepository, IHubContext<ProjectHub> projectHubConext, IHubContext<TaskHub> taskHubContext)
+        public TaskColumnController(
+            ILogger<TaskColumnController> logger, 
+            UserAccessCheck userAccess, 
+            ColumnTaskRepository repository, 
+            TaskUserRepository taskUserRepository, 
+            IRealtimeNotifier notifier)
         {
             _logger = logger;
             _repository = repository;
             _userAccess = userAccess;
             _taskUserRepository = taskUserRepository;
-            _projectHubContext = projectHubConext;
-            _taskHubContext = taskHubContext;
+            _notifier = notifier;
         }
 
         /// <summary>
@@ -186,7 +187,7 @@ namespace neco_board_ce.Controllers.API
 
             if(result.Success)
             {
-                await _projectHubContext.Clients.Group(accessResult.ProjectId!).SendAsync(Constants.SOKET_EVENT_TASK_CREATED, dto.ColumnId);
+                await _notifier.TaskCreated(accessResult.ProjectId!, dto.ColumnId);
                 return Ok();
             }
             return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Unknown error" });
@@ -236,7 +237,7 @@ namespace neco_board_ce.Controllers.API
 
             if (result.Success)
             {
-                await _projectHubContext.Clients.Group(accessResult.ProjectId!).SendAsync(Constants.SOKET_EVENT_TASK_UPDATED, taskId);
+                await _notifier.TaskUpdated(accessResult.ProjectId!, taskId);
                 return Ok();
             }
             return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Unknown error" });
@@ -284,12 +285,7 @@ namespace neco_board_ce.Controllers.API
 
             if (result.Success)
             {
-                var response = new NewTaskColumnSocketRequest
-                {
-                    OldColumnId = columnId,
-                    NewColumnId = dto.ColumnId
-                };
-                await _projectHubContext.Clients.Group(projectId).SendAsync(Constants.SOKET_EVENT_TASK_COLUMN_UPDATED, response);
+                await _notifier.TaskColumnUpdated(projectId, columnId, dto.ColumnId);
                 return Ok();
             }
             return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Unknown error" });
@@ -335,8 +331,7 @@ namespace neco_board_ce.Controllers.API
 
             if (result.Success)
             {
-                await _taskHubContext.Clients.Group(taskId).SendAsync(Constants.SOKET_EVENT_TASK_DELETED);
-                await _projectHubContext.Clients.Group(projectId).SendAsync(Constants.SOKET_EVENT_TASK_PRIORITY_UPDATED, taskId);
+                await _notifier.TaskDelete(projectId, result.Message!, taskId);
                 return Ok();
             }
             return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Unknown error" });
