@@ -100,10 +100,9 @@ namespace neco_board_ce.Controllers.API
         /// </summary>
         /// <remarks>
         /// Updates the priority of a task.
-        /// On success, broadcasts the <c>SOKET_EVENT_TASK_PRIORITY_UPDATED</c> SignalR event
-        /// to both the task group (identified by <paramref name="taskId"/>) and the parent
-        /// project group. The project group receives an <see cref="EditTaskSocketResponse"/>
-        /// payload containing the task ID and the column ID returned by the repository.
+        /// On success, emits the <c>TaskPriorityUpdated</c> SignalR event to both the task group
+        /// (identified by <paramref name="taskId"/>) and the parent project group, with a
+        /// <c>TaskPriorityUpdatedResponse</c> payload (task id, column id and the new priority).
         /// <br/><br/>
         /// Requires at least <see cref="ProjectRole.VIEWER"/> membership in the project,
         /// or workspace administrator privileges.

@@ -250,10 +250,9 @@ namespace neco_board_ce.Controllers.API
         /// Moves a task to a different column within the same project.
         /// Requires at least <see cref="ProjectRole.VIEWER"/> membership in the task's
         /// parent project, or workspace administrator privileges.
-        /// On success, broadcasts the <c>SOKET_EVENT_TASK_COLUMN_UPDATED</c> SignalR event
-        /// to the project group identified by <paramref name="projectId"/>.
-        /// The event payload is a <see cref="NewTaskColumnSocketRequest"/> containing
-        /// both the previous and the new column identifiers.
+        /// On success, emits the <c>TaskColumnUpdated</c> SignalR event to the project group
+        /// identified by <paramref name="projectId"/>, carrying both the previous and the new
+        /// column identifiers.
         /// <br/><br/>
         /// <paramref name="projectId"/> and <paramref name="columnId"/> are passed
         /// as query string parameters (not part of the route template).
