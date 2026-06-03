@@ -183,7 +183,7 @@ namespace neco_board_ce.Repositories.Tables
 
             _db.ColumnTasks.Remove(existing);
             var saved = await _db.SaveChangesAsync() > 0;
-            return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to delete task." };
+            return new RepositoryResult<bool> { Success = saved, Message = saved ? existing.ColumnId : "Failed to delete task." };
         }
     }
 }
