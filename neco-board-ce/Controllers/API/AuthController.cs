@@ -25,12 +25,14 @@ namespace neco_board_ce.Controllers.API
         private readonly AuthService _authService;
         private readonly ILogger<AuthController> _logger;
         private readonly IConfiguration _config;
+        private readonly IWebHostEnvironment _env;
 
-        public AuthController(AuthService authService, ILogger<AuthController> logger, IConfiguration configuration)
+        public AuthController(AuthService authService, ILogger<AuthController> logger, IConfiguration configuration, IWebHostEnvironment env)
         {
             _authService = authService;
             _logger = logger;
             _config = configuration;
+            _env = env;
         }
 
         /// <summary>
@@ -203,11 +205,15 @@ namespace neco_board_ce.Controllers.API
 
         private void SetRefreshTokenCookie(string token)
         {
+            // In production the SPA is served from another origin over HTTPS, so the cookie must be
+            // Secure + SameSite=None to be sent on cross-site requests. In development (http://localhost)
+            // Secure would drop the cookie, so fall back to an insecure Lax cookie there.
+            var isDev = _env.IsDevelopment();
             Response.Cookies.Append("refreshToken", token, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = false,
-                SameSite = SameSiteMode.Lax,
+                Secure = !isDev,
+                SameSite = isDev ? SameSiteMode.Lax : SameSiteMode.None,
                 Expires = DateTime.UtcNow.AddDays(_config.GetValue<int>("Jwt:RefreshTtl"))
             });
         }
