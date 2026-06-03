@@ -1,4 +1,5 @@
 using neco_board_ce.Controllers.API;
+using neco_board_ce.Models.DTO.Response.Socket;
 using neco_board_ce.Models.Enums;
 
 namespace neco_board_ce.Interfaces
@@ -40,9 +41,8 @@ namespace neco_board_ce.Interfaces
         /// Source: <see cref="ProjectController"/> (<c>PUT /api/project/{id}</c>) →
         /// project group <c>project:{id}</c> and the admins group.
         /// </remarks>
-        /// <param name="id">Id of the updated project.</param>
-        /// <param name="name">New project name (lets the client patch in place without a refetch).</param>
-        Task ProjectUpdated(string id, string name);
+        /// <param name="payload">Updated project id and name.</param>
+        Task ProjectUpdated(ProjectUpdatedResponse payload);
 
         /// <summary>A project was deleted.</summary>
         /// <remarks>
@@ -66,9 +66,8 @@ namespace neco_board_ce.Interfaces
         /// Source: <see cref="UserProjectController"/> (<c>PATCH /api/project/{projectId}/users/{userId}</c>)
         /// → project group and the affected user.
         /// </remarks>
-        /// <param name="userId">Id of the affected user.</param>
-        /// <param name="role">The new project role (lets the client update the member entry in place).</param>
-        Task UserRoleUpdatedInProject(string userId, ProjectRole role);
+        /// <param name="payload">Affected user id and the new project role.</param>
+        Task UserRoleUpdatedInProject(UserRoleUpdatedResponse payload);
 
         /// <summary>A user was removed from a project.</summary>
         /// <remarks>
@@ -88,9 +87,8 @@ namespace neco_board_ce.Interfaces
 
         /// <summary>A column was updated (renamed).</summary>
         /// <remarks>Source: <see cref="ColumsProjectController"/> (<c>PUT /api/column/{columnId}</c>).</remarks>
-        /// <param name="columnId">Id of the updated column.</param>
-        /// <param name="name">New column name.</param>
-        Task ColumnUpdated(string columnId, string name);
+        /// <param name="payload">Updated column id and name.</param>
+        Task ColumnUpdated(ColumnUpdatedResponse payload);
 
         /// <summary>Column order changed.</summary>
         /// <remarks>Source: <see cref="ColumsProjectController"/> (<c>PUT /api/column/{columnId}/order</c>). No payload — the client refetches the column order.</remarks>
@@ -117,38 +115,32 @@ namespace neco_board_ce.Interfaces
 
         /// <summary>A task was moved between columns.</summary>
         /// <remarks>Source: <see cref="TaskColumnController"/> (<c>PATCH /api/tasks/{taskId}/column</c>) → project group.</remarks>
-        /// <param name="oldColumn">Id of the source column.</param>
-        /// <param name="newColumn">Id of the destination column.</param>
-        Task TaskColumnUpdated(string oldColumn, string newColumn);
+        /// <param name="payload">Source and destination column ids.</param>
+        Task TaskColumnUpdated(TaskColumnUpdatedResponse payload);
 
         /// <summary>Task status changed.</summary>
         /// <remarks>
         /// Source: <see cref="TaskInfoController"/> (<c>PATCH /api/tasks/{taskId}/status</c>) →
         /// task group <c>task:{taskId}</c> and project group <c>project:{id}</c>.
         /// </remarks>
-        /// <param name="taskId">Id of the task.</param>
-        /// <param name="columnId">Id of the task's column (lets the board locate the card).</param>
-        /// <param name="status">The new status.</param>
-        Task TaskStatusUpdated(string taskId, string columnId, ColumnTaskStatus status);
+        /// <param name="payload">Task id, its column id and the new status.</param>
+        Task TaskStatusUpdated(TaskStatusUpdatedResponse payload);
 
         /// <summary>Task priority changed.</summary>
         /// <remarks>
         /// Source: <see cref="TaskInfoController"/> (<c>PATCH /api/tasks/{taskId}/priority</c>) →
         /// task group and project group.
         /// </remarks>
-        /// <param name="taskId">Id of the task.</param>
-        /// <param name="columnId">Id of the task's column (lets the board locate the card).</param>
-        /// <param name="priority">The new priority.</param>
-        Task TaskPriorityUpdated(string taskId, string columnId, TaskPriority priority);
+        /// <param name="payload">Task id, its column id and the new priority.</param>
+        Task TaskPriorityUpdated(TaskPriorityUpdatedResponse payload);
 
         /// <summary>A task was deleted.</summary>
         /// <remarks>
         /// Source: <see cref="TaskColumnController"/> (<c>DELETE /api/tasks/{taskId}</c>) →
         /// task group <c>task:{taskId}</c> and project group <c>project:{id}</c>.
         /// </remarks>
-        /// <param name="taskId">Id of the deleted task.</param>
-        /// <param name="columnId">Id of the column the task belonged to.</param>
-        Task TaskDeleted(string taskId, string columnId);
+        /// <param name="payload">Deleted task id and its column id.</param>
+        Task TaskDeleted(TaskDeletedResponse payload);
 
         #endregion
 
