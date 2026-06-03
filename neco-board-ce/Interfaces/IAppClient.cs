@@ -11,16 +11,16 @@ namespace neco_board_ce.Interfaces
     /// The method name equals the event name on the client; the parameters form the payload.
     /// Routing (which group / which user receives the event) is NOT part of this contract —
     /// it lives in <see cref="IRealtimeNotifier"/>, which strips routing-only ids (project id,
-    /// the column id used to pick a group) and forwards the rest here. Each member documents its
-    /// source REST route (or hub lifecycle method) and the target SignalR group(s).
+    /// the column id used to pick a group) and forwards the rest here.
     /// <para>
-    /// Enum payloads (<see cref="ColumnTaskStatus"/>, <see cref="TaskPriority"/>,
-    /// <see cref="ProjectRole"/>) are serialized as strings because SignalR is configured with
-    /// a <c>JsonStringEnumConverter</c> via <c>AddJsonProtocol</c>.
+    /// AsyncAPI documentation for these events is generated from
+    /// <see cref="neco_board_ce.Controllers.Hubs.AppSocketDocs"/> (Saunter cannot annotate an
+    /// interface). The XML comments here feed IntelliSense / DocFX.
     /// </para>
     /// <para>
-    /// Note: these XML comments feed IntelliSense / DocFX only. They are NOT consumed by
-    /// Saunter / AsyncAPI — that tooling reads its own attributes instead.
+    /// Enum payloads (<see cref="ColumnTaskStatus"/>, <see cref="TaskPriority"/>,
+    /// <see cref="ProjectRole"/>) are serialized as strings (<c>JsonStringEnumConverter</c> via
+    /// <c>AddJsonProtocol</c>).
     /// </para>
     /// </remarks>
     public interface IAppClient
