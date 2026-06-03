@@ -110,7 +110,6 @@ namespace neco_board_ce.Services.Authentication
 
             if (token is not null)
             {
-                _db.RefreshTokens.Remove(token);
                 try
                 {
                     _db.RefreshTokens.Remove(token);
@@ -118,7 +117,7 @@ namespace neco_board_ce.Services.Authentication
                 }
                 catch (DbUpdateConcurrencyException err)
                 {
-                    _logger.LogWarning("Failed to delete refresh token after logout: {}", err.Message);
+                    _logger.LogWarning("Failed to delete refresh token after logout: {Error}", err.Message);
                 }
             }
         }
