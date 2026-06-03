@@ -25,6 +25,7 @@
 
 # Uploaded files
 uploads/
+.claude
 
 # OS
 .DS_Store
