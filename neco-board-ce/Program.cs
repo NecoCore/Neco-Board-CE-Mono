@@ -142,8 +142,8 @@ builder.Services.AddOpenApi(options =>
     {
         document.Info = new OpenApiInfo
         {
-            Title = "Neco Board CE",
-            Version = "v0.2.1-beta",
+            Title = Constants.PROJECT_NAME,
+            Version = Constants.VERSION,
             Description = "Documentation for project menagment API"
         };
 
@@ -195,7 +195,7 @@ builder.Services.AddAsyncApiSchemaGeneration(options =>
     // Required top-level "info" — without it the document is invalid and the UI cannot render.
     options.AsyncApi = new Saunter.AsyncApiSchema.v2.AsyncApiDocument
     {
-        Info = new Saunter.AsyncApiSchema.v2.Info("Board CE Sockets", "v0.2.1-beta")
+        Info = new Saunter.AsyncApiSchema.v2.Info(Constants.PROJECT_NAME, Constants.VERSION)
         {
             Description = "Realtime SignalR events pushed by the server to clients."
         }
