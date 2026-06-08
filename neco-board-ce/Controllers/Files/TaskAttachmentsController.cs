@@ -151,7 +151,7 @@ namespace neco_board_ce.Controllers.Files
         /// <summary>
         /// Delete Task Attachment
         /// </summary>
-        /// <remarks>Deletes the attachment record from the database. The file in storage is not removed.</remarks>
+        /// <remarks>Deletes the attachment record from the database and removes the file from storage.</remarks>
         /// <response code="204">Deleted successfully.</response>
         /// <response code="401">Not authenticated.</response>
         /// <response code="403">No access to the task's project.</response>
@@ -172,6 +172,8 @@ namespace neco_board_ce.Controllers.Files
             if (!existing.Success || existing.Data is null) return NotFound();
             if (existing.Data.TaskId != taskId) return NotFound();
 
+            var filePath = existing.Data.FilePath;
+
             var result = await _repository.Delete(attachmentId);
             if (!result.Success)
             {
@@ -180,6 +182,7 @@ namespace neco_board_ce.Controllers.Files
                     new ErrorMessageResponse { Message = "Failed to delete attachment." });
             }
 
+            await _storage.DeleteAsync(filePath);
             await _realtime.TaskAttachmentDeleted(taskId, attachmentId);
             return NoContent();
         }
