@@ -136,6 +136,7 @@ namespace neco_board_ce.Controllers.Files
 
             var result = await _repository.GetById(attachmentId);
             if (!result.Success || result.Data is null) return NotFound();
+            if (result.Data.TaskId != taskId) return NotFound();
 
             var stream = await _storage.GetAsync(result.Data.FilePath);
             if (stream is null) return NotFound();
@@ -169,6 +170,7 @@ namespace neco_board_ce.Controllers.Files
 
             var existing = await _repository.GetById(attachmentId);
             if (!existing.Success || existing.Data is null) return NotFound();
+            if (existing.Data.TaskId != taskId) return NotFound();
 
             var result = await _repository.Delete(attachmentId);
             if (!result.Success)
