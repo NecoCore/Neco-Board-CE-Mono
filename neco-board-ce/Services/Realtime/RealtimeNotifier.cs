@@ -118,5 +118,21 @@ namespace neco_board_ce.Services.Realtime
         public Task TaskRemoveUser(string taskId, string userId) =>
             _hub.Clients.Group(HubGroups.Task(taskId)).TaskUserRemoved(userId);
         #endregion
+
+        #region Task attachments
+        public Task TaskAttachmentUploaded(string taskId) =>
+            _hub.Clients.Group(HubGroups.Task(taskId)).TaskAttachmentUploaded();
+
+        public Task TaskAttachmentDeleted(string taskId, string attachmentId) =>
+            _hub.Clients.Group(HubGroups.Task(taskId)).TaskAttachmentDeleted(attachmentId);
+        #endregion
+
+        #region Task images
+        public Task TaskImageUploaded(string taskId) =>
+            _hub.Clients.Group(HubGroups.Task(taskId)).TaskImageUploaded();
+
+        public Task TaskImageDeleted(string taskId, string imageId) =>
+            _hub.Clients.Group(HubGroups.Task(taskId)).TaskImageDeleted(imageId);
+        #endregion
     }
 }
