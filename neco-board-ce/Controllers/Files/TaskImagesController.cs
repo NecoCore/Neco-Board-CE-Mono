@@ -152,7 +152,7 @@ namespace neco_board_ce.Controllers.Files
         /// <summary>
         /// Delete Task Image
         /// </summary>
-        /// <remarks>Deletes the image record from the database. The file in storage is not removed.</remarks>
+        /// <remarks>Deletes the image record from the database and removes the file from storage.</remarks>
         /// <response code="204">Deleted successfully.</response>
         /// <response code="401">Not authenticated.</response>
         /// <response code="403">No access to the task's project.</response>
@@ -173,6 +173,8 @@ namespace neco_board_ce.Controllers.Files
             if (!existing.Success || existing.Data is null) return NotFound();
             if (existing.Data.TaskId != taskId) return NotFound();
 
+            var imagePath = existing.Data.ImagePath;
+
             var result = await _repository.Delete(imageId);
             if (!result.Success)
             {
@@ -181,6 +183,7 @@ namespace neco_board_ce.Controllers.Files
                     new ErrorMessageResponse { Message = "Failed to delete image." });
             }
 
+            await _storage.DeleteAsync(imagePath);
             await _realtime.TaskImageDeleted(taskId, imageId);
             return NoContent();
         }
