@@ -76,10 +76,25 @@ namespace neco_board_ce.Controllers.Files
         {
             var decodedPath = Uri.UnescapeDataString(filePath);
 
-            var stream = await _storage.GetAsync(decodedPath);
-            if (stream is null) return NotFound();
+            // Normalize and reject any path that escapes the avatars folder.
+            var normalized = Path.GetFullPath(decodedPath).Replace('\\', '/');
+            if (!normalized.StartsWith("avatars/", StringComparison.OrdinalIgnoreCase))
+                return NotFound();
 
-            return File(stream, "image/jpeg");
+            try
+            {
+                var stream = await _storage.GetAsync(decodedPath);
+                if (stream is null) return NotFound();
+                return File(stream, "image/jpeg");
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return NotFound();
+            }
+            catch (FileNotFoundException)
+            {
+                return NotFound();
+            }
         }
     }
 }
