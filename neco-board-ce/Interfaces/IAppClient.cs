@@ -157,6 +157,32 @@ namespace neco_board_ce.Interfaces
 
         #endregion
 
+        #region Task attachments (task:{id} group)
+
+        /// <summary>A file attachment was uploaded to a task.</summary>
+        /// <remarks>Source: <c>POST files/task/{taskId}/attachments</c> → task group. No payload — the client refetches the attachment list.</remarks>
+        Task TaskAttachmentUploaded();
+
+        /// <summary>A file attachment was deleted from a task.</summary>
+        /// <remarks>Source: <c>DELETE files/task/{taskId}/attachments/{attachmentId}</c> → task group.</remarks>
+        /// <param name="attachmentId">Id of the deleted attachment.</param>
+        Task TaskAttachmentDeleted(string attachmentId);
+
+        #endregion
+
+        #region Task images (task:{id} group)
+
+        /// <summary>An image was uploaded to a task.</summary>
+        /// <remarks>Source: <c>POST files/task/{taskId}/images</c> → task group. No payload — the client refetches the image list.</remarks>
+        Task TaskImageUploaded();
+
+        /// <summary>An image was deleted from a task.</summary>
+        /// <remarks>Source: <c>DELETE files/task/{taskId}/images/{imageId}</c> → task group.</remarks>
+        /// <param name="imageId">Id of the deleted image.</param>
+        Task TaskImageDeleted(string imageId);
+
+        #endregion
+
         #region Presence (hub lifecycle, not REST)
 
         /// <summary>A user came online.</summary>
