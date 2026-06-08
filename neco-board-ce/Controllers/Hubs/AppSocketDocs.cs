@@ -131,6 +131,34 @@ namespace neco_board_ce.Controllers.Hubs
 
         #endregion
 
+        #region Task attachments
+
+        [Channel("TaskAttachmentUploaded")]
+        [PublishOperation(typeof(EmptyPayload), Summary = "Attachment uploaded to task",
+            Description = "Triggered by POST files/task/{taskId}/attachments. Sent to task:{taskId}. No payload — client refetches the attachment list.")]
+        public Task TaskAttachmentUploaded() => Task.CompletedTask;
+
+        [Channel("TaskAttachmentDeleted")]
+        [PublishOperation(typeof(string), Summary = "Attachment deleted from task",
+            Description = "Triggered by DELETE files/task/{taskId}/attachments/{attachmentId}. Sent to task:{taskId}. Payload: attachment id.")]
+        public Task TaskAttachmentDeleted(string attachmentId) => Task.CompletedTask;
+
+        #endregion
+
+        #region Task images
+
+        [Channel("TaskImageUploaded")]
+        [PublishOperation(typeof(EmptyPayload), Summary = "Image uploaded to task",
+            Description = "Triggered by POST files/task/{taskId}/images. Sent to task:{taskId}. No payload — client refetches the image list.")]
+        public Task TaskImageUploaded() => Task.CompletedTask;
+
+        [Channel("TaskImageDeleted")]
+        [PublishOperation(typeof(string), Summary = "Image deleted from task",
+            Description = "Triggered by DELETE files/task/{taskId}/images/{imageId}. Sent to task:{taskId}. Payload: image id.")]
+        public Task TaskImageDeleted(string imageId) => Task.CompletedTask;
+
+        #endregion
+
         #region Presence (hub lifecycle, not REST)
 
         [Channel("UserConnected")]
