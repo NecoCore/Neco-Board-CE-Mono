@@ -36,5 +36,15 @@ namespace neco_board_ce.Interfaces
         Task TaskAddUser(string taskId);
         Task TaskRemoveUser(string taskId, string userId);
         #endregion
+
+        #region Task attachments
+        Task TaskAttachmentUploaded(string taskId);
+        Task TaskAttachmentDeleted(string taskId, string attachmentId);
+        #endregion
+
+        #region Task images
+        Task TaskImageUploaded(string taskId);
+        Task TaskImageDeleted(string taskId, string imageId);
+        #endregion
     }
 }
