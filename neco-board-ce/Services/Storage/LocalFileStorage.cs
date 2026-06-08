@@ -16,8 +16,17 @@ namespace neco_board_ce.Services.Storage
 
         public Task<Stream> GetAsync(string filePath)
         {
-            var fullPath = Path.Combine(_basePath, filePath);
-            _logger.LogInformation($"Looking for file: {fullPath}");
+            var fullPath = Path.GetFullPath(Path.Combine(_basePath, filePath));
+            var baseFull = Path.GetFullPath(_basePath);
+
+            if (!fullPath.StartsWith(baseFull + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+                && !fullPath.Equals(baseFull, StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning("Path traversal attempt blocked: '{FilePath}'", filePath);
+                throw new UnauthorizedAccessException("Access to the requested path is not allowed.");
+            }
+
+            _logger.LogInformation("Looking for file: {FullPath}", fullPath);
             if (!File.Exists(fullPath)) throw new FileNotFoundException($"File not found: {fullPath}");
             return Task.FromResult<Stream>(File.OpenRead(fullPath));
         }
