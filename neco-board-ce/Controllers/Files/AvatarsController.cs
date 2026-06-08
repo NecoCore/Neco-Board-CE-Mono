@@ -49,10 +49,19 @@ namespace neco_board_ce.Controllers.Files
         public async Task<IActionResult> UploadAvatar(IFormFile file)
         {
             if (UserId is null) return Unauthorized();
+
+            var existing = await _repository.GetById(UserId);
+            var oldPath = existing.Data?.Avatar;
+
             await using var stream = file.OpenReadStream();
             var path = await _storage.SaveAsync(stream, file.FileName, "avatars");
             var result = await _repository.UpdateAvatar(UserId, path);
-            return result.Success ? Ok(new { path }) : BadRequest(new { result.Message });
+            if (!result.Success) return BadRequest(new { result.Message });
+
+            if (!string.IsNullOrEmpty(oldPath))
+                await _storage.DeleteAsync(oldPath);
+
+            return Ok(new { path });
         }
 
         /// <summary>
