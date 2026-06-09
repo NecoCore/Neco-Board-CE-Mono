@@ -18,24 +18,33 @@ namespace neco_board_ce.Controllers.Files
     [Tags("Task attachments")]
     public class TaskAttachmentsController : UserAuth
     {
+        private static readonly HashSet<string> AllowedExtensions =
+            [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+             ".txt", ".csv", ".zip", ".rar", ".7z",
+             ".jpg", ".jpeg", ".png", ".gif", ".webp",
+             ".mp4", ".mov", ".avi"];
+
         private readonly IFileStorage _storage;
         private readonly ILogger<TaskAttachmentsController> _logger;
         private readonly TaskAttachmentsRepository _repository;
         private readonly UserAccessCheck _userAccess;
         private readonly IRealtimeNotifier _realtime;
+        private readonly long _maxFileSize;
 
         public TaskAttachmentsController(
             IFileStorage storage,
             ILogger<TaskAttachmentsController> logger,
             TaskAttachmentsRepository repository,
             UserAccessCheck userAccess,
-            IRealtimeNotifier realtime)
+            IRealtimeNotifier realtime,
+            IConfiguration config)
         {
             _storage = storage;
             _logger = logger;
             _repository = repository;
             _userAccess = userAccess;
             _realtime = realtime;
+            _maxFileSize = config.GetValue<long>("Storage:MaxFileSizeBytes", 10 * 1024 * 1024);
         }
 
         /// <summary>
@@ -89,6 +98,13 @@ namespace neco_board_ce.Controllers.Files
         {
             if (file is null || file.Length == 0)
                 return BadRequest(new ErrorMessageResponse { Message = "No file provided." });
+
+            if (file.Length > _maxFileSize)
+                return BadRequest(new ErrorMessageResponse { Message = $"File exceeds the maximum allowed size of {_maxFileSize / 1024 / 1024} MB." });
+
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!AllowedExtensions.Contains(ext))
+                return BadRequest(new ErrorMessageResponse { Message = $"File type '{ext}' is not allowed." });
 
             var access = await _userAccess.HasAccessToTask(UserId!, taskId);
             if (!access.Result && !IsWorkspaceAdmin()) return Forbid();
