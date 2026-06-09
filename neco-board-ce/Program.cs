@@ -40,35 +40,23 @@ if (builder.Environment.IsDevelopment())
 }
 else
 {
-    if(!string.IsNullOrEmpty(builder.Configuration["App:AllowOrigins"]))
+    var rawOrigins = builder.Configuration["App:AllowOrigins"];
+    if (string.IsNullOrWhiteSpace(rawOrigins))
+        throw new InvalidOperationException(
+            "APP_ALLOW_ORIGINS must be set in production. " +
+            "Provide a comma-separated list of allowed origins (e.g. https://app.example.com).");
+
+    var allowedOrigins = rawOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    builder.Services.AddCors(options =>
     {
-        var allowedOrigins = builder.Configuration["App:AllowOrigins"]!.Split(',');
-        builder.Services.AddCors(options =>
+        options.AddPolicy("ProdCors", policy =>
         {
-            options.AddPolicy("ProdCors", policy =>
-            {
-                policy.WithOrigins(allowedOrigins)
-                      .AllowAnyHeader()
-                      .AllowAnyMethod()
-                      .AllowCredentials();
-            });
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
         });
-    }
-    else
-    {
-        builder.Services.AddCors(options =>
-        {
-            options.AddPolicy("ProdCors", policy =>
-            {
-                // AllowAnyOrigin() cannot be combined with AllowCredentials() — ASP.NET Core
-                // throws on preflight. Reflect any origin instead so credentials stay allowed.
-                policy.SetIsOriginAllowed(_ => true)
-                      .AllowAnyHeader()
-                      .AllowAnyMethod()
-                      .AllowCredentials();
-            });
-        });
-    }
+    });
 }
 
 // Json serializer options to ignore cycles in entity relationships
@@ -140,6 +128,7 @@ builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<UserAccessCheck>();
 builder.Services.AddSingleton<IRealtimeNotifier, RealtimeNotifier>();
+builder.Services.AddSingleton<Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider>();
 
 // Open API
 builder.Services.AddOpenApi(options =>
