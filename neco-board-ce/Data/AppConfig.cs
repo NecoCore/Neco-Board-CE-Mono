@@ -22,6 +22,7 @@ namespace neco_board_ce.Data
 
             ["Storage:Type"] = Environment.GetEnvironmentVariable("FILE_STORAGE"),
             ["Storage:Local:BasePath"] = Environment.GetEnvironmentVariable("LOCAL_STORAGE_PATH"),
+            ["Storage:MaxFileSizeBytes"] = Environment.GetEnvironmentVariable("UPLOAD_MAX_FILE_SIZE"),
             ["Storage:S3:Region"] = Environment.GetEnvironmentVariable("S3_STORAGE_REGION"),
             ["Storage:S3:Bucket"] = Environment.GetEnvironmentVariable("S3_STORAGE_BUCKET"),
             ["Storage:S3:AccessKey"] = Environment.GetEnvironmentVariable("S3_STORAGE_ACCESS_KEY"),
