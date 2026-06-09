@@ -18,24 +18,30 @@ namespace neco_board_ce.Controllers.Files
     [Tags("Task images")]
     public class TaskImagesController : UserAuth
     {
+        private static readonly HashSet<string> AllowedExtensions =
+            [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"];
+
         private readonly IFileStorage _storage;
         private readonly ILogger<TaskImagesController> _logger;
         private readonly TaskImagesRepository _repository;
         private readonly UserAccessCheck _userAccess;
         private readonly IRealtimeNotifier _realtime;
+        private readonly long _maxFileSize;
 
         public TaskImagesController(
             IFileStorage storage,
             ILogger<TaskImagesController> logger,
             TaskImagesRepository repository,
             UserAccessCheck userAccess,
-            IRealtimeNotifier realtime)
+            IRealtimeNotifier realtime,
+            IConfiguration config)
         {
             _storage = storage;
             _logger = logger;
             _repository = repository;
             _userAccess = userAccess;
             _realtime = realtime;
+            _maxFileSize = config.GetValue<long>("Storage:MaxFileSizeBytes", 10 * 1024 * 1024);
         }
 
         /// <summary>
@@ -93,8 +99,12 @@ namespace neco_board_ce.Controllers.Files
             if (file is null || file.Length == 0)
                 return BadRequest(new ErrorMessageResponse { Message = "No file provided." });
 
-            if (!file.ContentType.StartsWith("image/"))
-                return BadRequest(new ErrorMessageResponse { Message = "Only image files are allowed." });
+            if (file.Length > _maxFileSize)
+                return BadRequest(new ErrorMessageResponse { Message = $"File exceeds the maximum allowed size of {_maxFileSize / 1024 / 1024} MB." });
+
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!AllowedExtensions.Contains(ext))
+                return BadRequest(new ErrorMessageResponse { Message = $"File type '{ext}' is not allowed. Allowed types: {string.Join(", ", AllowedExtensions)}." });
 
             var access = await _userAccess.HasAccessToTask(UserId!, taskId);
             if (!access.Result && !IsWorkspaceAdmin()) return Forbid();
