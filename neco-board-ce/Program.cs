@@ -8,6 +8,7 @@ using neco_board_ce.Interfaces;
 using neco_board_ce.Repositories.Tables;
 using neco_board_ce.Services.Authentication;
 using neco_board_ce.Services.Realtime;
+using neco_board_ce.Utils;
 using neco_board_ce.Utils.Check;
 using neco_board_ce.Utils.Docs;
 using Saunter;
@@ -80,6 +81,15 @@ AppConfig.GetDatabase(builder.Services, builder.Configuration);
 // Register file storage service
 AppConfig.AddFileStorage(builder.Services, builder.Configuration);
 
+// Validate JWT config early — fail fast with a clear message instead of a late NRE.
+var jwtSecret = builder.Configuration["Jwt:Secret"];
+if (string.IsNullOrWhiteSpace(jwtSecret))
+    throw new InvalidOperationException(
+        "Jwt:Secret is not configured. Set the JWT_SECRET environment variable.");
+if (System.Text.Encoding.UTF8.GetByteCount(jwtSecret) < 32)
+    throw new InvalidOperationException(
+        "Jwt:Secret must be at least 32 bytes (256 bits) long for HMAC-SHA256.");
+
 // Jwt authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -92,7 +102,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]!))
+            IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(jwtSecret))
         };
 
         options.Events = new JwtBearerEvents
@@ -128,6 +138,10 @@ builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<UserAccessCheck>();
 builder.Services.AddSingleton<IRealtimeNotifier, RealtimeNotifier>();
+
+// Global exception handling → RFC 7807 ProblemDetails
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddSingleton<Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider>();
 
 // Open API
@@ -214,6 +228,9 @@ await using (var scope = app.Services.CreateAsyncScope())
     await AppConfig.InitializeDatabaseAsync(dbContext, config);
 }
 
+
+// Global exception handler — outermost middleware so it catches everything downstream.
+app.UseExceptionHandler();
 
 // Middleware
 if (app.Environment.IsDevelopment())
