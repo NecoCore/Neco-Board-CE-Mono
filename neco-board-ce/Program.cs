@@ -20,6 +20,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add env variables to configuration
 builder.Configuration.AddInMemoryCollection(AppConfig.EnvOptions);
 
+// Kestrel upload size limit (UPLOAD_MAX_FILE_SIZE, default 10 MB)
+var maxFileSize = builder.Configuration.GetValue<long>("Storage:MaxFileSizeBytes", 10 * 1024 * 1024);
+builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = maxFileSize);
+
 // CORS
 if (builder.Environment.IsDevelopment())
 {
