@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
 using neco_board_ce.Interfaces;
 using neco_board_ce.Models.DTO.Response.Messages;
 using neco_board_ce.Models.Entity;
@@ -30,6 +31,7 @@ namespace neco_board_ce.Controllers.Files
         private readonly UserAccessCheck _userAccess;
         private readonly IRealtimeNotifier _realtime;
         private readonly long _maxFileSize;
+        private readonly FileExtensionContentTypeProvider _mimeProvider;
 
         public TaskAttachmentsController(
             IFileStorage storage,
@@ -37,7 +39,8 @@ namespace neco_board_ce.Controllers.Files
             TaskAttachmentsRepository repository,
             UserAccessCheck userAccess,
             IRealtimeNotifier realtime,
-            IConfiguration config)
+            IConfiguration config,
+            FileExtensionContentTypeProvider mimeProvider)
         {
             _storage = storage;
             _logger = logger;
@@ -45,6 +48,7 @@ namespace neco_board_ce.Controllers.Files
             _userAccess = userAccess;
             _realtime = realtime;
             _maxFileSize = config.GetValue<long>("Storage:MaxFileSizeBytes", 10 * 1024 * 1024);
+            _mimeProvider = mimeProvider;
         }
 
         /// <summary>
@@ -157,9 +161,8 @@ namespace neco_board_ce.Controllers.Files
             var stream = await _storage.GetAsync(result.Data.FilePath);
             if (stream is null) return NotFound();
 
-            var contentType = string.IsNullOrEmpty(result.Data.Type)
-                ? "application/octet-stream"
-                : $"application/{result.Data.Type}";
+            var ext = Path.GetExtension(result.Data.Name);
+            var contentType = _mimeProvider.TryGetContentType(ext, out var mime) ? mime : "application/octet-stream";
 
             return File(stream, contentType, result.Data.Name);
         }
