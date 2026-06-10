@@ -210,7 +210,7 @@ namespace neco_board_ce.Controllers.API
             }
             if (result.Data is null) return NotFound(new ErrorMessageResponse { Message = "User account not found." });
             var data = result.Data;
-            if(BCrypt.Net.BCrypt.Verify(dto.OldPassword, data.Password)) return BadRequest(new ErrorMessageResponse { Message = "The current password is incorrect." });
+            if(!BCrypt.Net.BCrypt.Verify(dto.OldPassword, data.Password)) return BadRequest(new ErrorMessageResponse { Message = "The current password is incorrect." });
             if(dto.Password != dto.ConfirmPassword) return BadRequest(new ErrorMessageResponse { Message = "New passwords do not match." });
 
             var updateResult = await _repository.UpdatePassword(UserId!, dto.Password);
