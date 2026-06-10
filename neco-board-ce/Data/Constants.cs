@@ -2,7 +2,7 @@
 {
     public static class Constants
     {
-        public static readonly string VERSION = "0.3.0-beta";
+        public static readonly string VERSION = "0.4.0-beta";
         public static readonly string PROJECT_NAME = "Neco Board CE";
 
         #region Roles
