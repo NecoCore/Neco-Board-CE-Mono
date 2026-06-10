@@ -235,8 +235,6 @@ app.UseExceptionHandler();
 // Middleware
 if (app.Environment.IsDevelopment())
 {
-    app.UseCors("DevCors");
-
     app.MapOpenApi();
     app.MapScalarApiReference("/docs/rest", options =>
     {
@@ -269,11 +267,12 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseCors("ProdCors");
     app.UseHttpsRedirection();
 }
 
 app.UseRouting();
+// CORS must sit between UseRouting and UseAuthentication.
+app.UseCors(app.Environment.IsDevelopment() ? "DevCors" : "ProdCors");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
