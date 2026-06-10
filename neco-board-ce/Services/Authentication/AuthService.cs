@@ -24,10 +24,11 @@ namespace neco_board_ce.Services.Authentication
 
         public async Task<AuthResult> RegisterAsync(RegisterRequest dto)
         {
-            if (await _accountRepository.GetByLogin(dto.Login) != null)
-                return new AuthResult(false, Error: "Login is already taken");
+            var existing = await _accountRepository.GetByLogin(dto.Login);
+            if (!existing.Success) return new AuthResult(false, Error: existing.Message);
+            if (existing.Data is not null) return new AuthResult(false, Error: "Login is already taken");
 
-            if(dto.Password != dto.ConfirmPassword)
+            if (dto.Password != dto.ConfirmPassword)
                 return new AuthResult(false, Error: "Passwords do not match");
 
             var account = new Account
