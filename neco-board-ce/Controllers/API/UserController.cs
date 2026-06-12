@@ -86,7 +86,32 @@ namespace neco_board_ce.Controllers.API
             return Ok(data);
         }
 
+        /// <summary>
+        /// Get Paginated User List
+        /// </summary>
+        /// <remarks>
+        /// Returns a paginated list of registered users.
+        /// Each item is mapped to a <see cref="UserInfoResponse"/> that contains only
+        /// publicly visible fields.
+        /// Returns <c>204 No Content</c> when the repository succeeds but no users exist on the requested page.
+        /// </remarks>
+        /// <param name="count">Number of items per page (default: 20).</param>
+        /// <param name="page">Page number to retrieve (default: 1).</param>
+        /// <returns>
+        /// <see cref="OkObjectResult"/> with a list of <see cref="UserInfoResponse"/> on success;
+        /// <see cref="NoContentResult"/> when no users exist on the page;
+        /// <see cref="UnauthorizedResult"/> when the caller is not authenticated;
+        /// <see cref="StatusCodeResult"/> 500 with <see cref="ErrorMessageResponse"/> on repository failure.
+        /// </returns>
+        /// <response code="200">Returns the paginated public summary list of users.</response>
+        /// <response code="204">No users found on the requested page.</response>
+        /// <response code="401">The request is not authenticated.</response>
+        /// <response code="500">Repository or infrastructure failure. Response body contains the error description.</response>
         [HttpGet("list")]
+        [ProducesResponseType(typeof(List<UserInfoResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetList([FromQuery] int count = 20, [FromQuery] int page = 1)
         {
             var result = await _repository.GetPage(count, page);
@@ -102,7 +127,35 @@ namespace neco_board_ce.Controllers.API
             return Ok(data);
         }
 
+        /// <summary>
+        /// Search Users
+        /// </summary>
+        /// <remarks>
+        /// Searches for users by name matching the provided query string.
+        /// Supports optional filtering by workspace role and pagination.
+        /// Each item is mapped to a <see cref="UserInfoResponse"/> that contains only
+        /// publicly visible fields.
+        /// Returns <c>204 No Content</c> when no users match the criteria.
+        /// </remarks>
+        /// <param name="query">The search string to match against user names.</param>
+        /// <param name="count">Number of items per page (default: 20).</param>
+        /// <param name="page">Page number to retrieve (default: 1).</param>
+        /// <param name="role">Optional filter by workspace role (e.g., ADMIN, USER).</param>
+        /// <returns>
+        /// <see cref="OkObjectResult"/> with a list of <see cref="UserInfoResponse"/> on success;
+        /// <see cref="NoContentResult"/> when no matching users exist;
+        /// <see cref="UnauthorizedResult"/> when the caller is not authenticated;
+        /// <see cref="StatusCodeResult"/> 500 with <see cref="ErrorMessageResponse"/> on repository failure.
+        /// </returns>
+        /// <response code="200">Returns the list of users matching the search criteria.</response>
+        /// <response code="204">No users match the search query.</response>
+        /// <response code="401">The request is not authenticated.</response>
+        /// <response code="500">Repository or infrastructure failure. Response body contains the error description.</response>
         [HttpGet("search")]
+        [ProducesResponseType(typeof(List<UserInfoResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetSearch(
             [FromQuery] string query,
             [FromQuery] int count = 20, 
