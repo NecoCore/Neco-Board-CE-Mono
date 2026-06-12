@@ -48,6 +48,34 @@ namespace neco_board_ce.Repositories.Tables
             }
         }
 
+        public async Task<RepositoryResult<List<Account>>> GetPage(int count, int page)
+        {
+            try
+            {
+                var accounts = await _db.Accounts.Skip((page - 1) * count).Take(count).ToListAsync();
+                return new RepositoryResult<List<Account>> { Success = true, Data = accounts };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while fetching paginated accounts from the database.");
+                return new RepositoryResult<List<Account>> { Success = false, Message = "An error occurred while fetching paginated accounts." };
+            }
+        }
+
+        public async Task<RepositoryResult<List<Account>>> SearchAccounts(string quwery, int count, int page, WorkspaceRoles? role = null)
+        {
+            try
+            {
+                var accounts = await _db.Accounts.Where(a => a.Name.Contains(quwery) && (role == null || a.Role == role)).Skip((page - 1) * count).Take(count).ToListAsync();
+                return new RepositoryResult<List<Account>> { Success = true, Data = accounts };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while searching accounts with query {Query} in the database.", quwery);
+                return new RepositoryResult<List<Account>> { Success = false, Message = "An error occurred while searching accounts." };
+            }
+        }
+
         public async Task<RepositoryResult<Account?>> GetByLogin(string login)
         {
             _logger.LogDebug("Fetching account with login: {Login} from the database.", login);
