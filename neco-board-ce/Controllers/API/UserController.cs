@@ -5,6 +5,7 @@ using neco_board_ce.Models.DTO.Response.Messages;
 using neco_board_ce.Models.DTO.Response.Projects;
 using neco_board_ce.Models.DTO.Response.Users;
 using neco_board_ce.Models.Entity;
+using neco_board_ce.Models.Enums;
 using neco_board_ce.Repositories.Tables;
 using neco_board_ce.Utils.Check;
 using neco_board_ce.Utils.Controllers;
@@ -82,6 +83,44 @@ namespace neco_board_ce.Controllers.API
             else if (resut.Data is null) return NoContent();
 
             var data = resut.Data.Select(x => new UserInfoResponse(x)).ToList();
+            return Ok(data);
+        }
+
+        [HttpGet("list")]
+        public async Task<IActionResult> GetList([FromQuery] int count = 20, [FromQuery] int page = 1)
+        {
+            var result = await _repository.GetPage(count, page);
+            if(!result.Success)
+            {
+                _logger.LogError("Failed to retrieve paginated user list: {Error}", result.Message ?? "unknown error");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorMessageResponse { Message = "Unable to retrieve the user list. Please try again later." });
+            }
+            else if (result.Data is null) return NoContent();
+
+            var data = result.Data.Select(x => new UserInfoResponse(x)).ToList();
+            return Ok(data);
+        }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> GetSearch(
+            [FromQuery] string query,
+            [FromQuery] int count = 20, 
+            [FromQuery] int page = 1, 
+            [FromQuery] WorkspaceRoles? role = null 
+        )
+        {
+            var result = await _repository.SearchAccounts(query, count, page, role);
+            if(!result.Success)
+            {
+                _logger.LogError("Failed to search users with query '{Query}': {Error}", query, result.Message ?? "unknown error");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorMessageResponse { Message = "Unable to perform the search. Please try again later." });
+
+            }
+            else if (result.Data is null) return NoContent();
+
+            var data = result.Data.Select(x => new UserInfoResponse(x)).ToList(); 
             return Ok(data);
         }
 
