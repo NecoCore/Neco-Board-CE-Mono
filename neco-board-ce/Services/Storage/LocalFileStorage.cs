@@ -31,18 +31,21 @@ namespace neco_board_ce.Services.Storage
             return Task.FromResult<Stream>(File.OpenRead(fullPath));
         }
 
-        public async Task<string> SaveAsync(Stream fileStream, string fileName, string folder)
+        public async Task<string> SaveAsync(Stream fileStream, string fileName, string folder, string? overrideName = null)
         {
             var dir = Path.Combine(_basePath, folder);
             Directory.CreateDirectory(dir);
 
-            var uniqueName = $"{Guid.NewGuid()}{Path.GetExtension(fileName)}";
-            var fullPath = Path.Combine(dir, uniqueName);
+            var finalName = string.IsNullOrEmpty(overrideName) 
+                ? $"{Guid.NewGuid()}{Path.GetExtension(fileName)}" 
+                : $"{overrideName}{Path.GetExtension(fileName)}";
+                
+            var fullPath = Path.Combine(dir, finalName);
 
             await using var fs = File.Create(fullPath);
             await fileStream.CopyToAsync(fs);
 
-            return Path.Combine(folder, uniqueName);
+            return Path.Combine(folder, finalName);
         }
 
         public async Task<bool> Exists(string filePath)

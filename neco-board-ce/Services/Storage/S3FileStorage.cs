@@ -29,10 +29,13 @@ namespace neco_board_ce.Services.Storage
             return response.ResponseStream;
         }
 
-        public async Task<string> SaveAsync(Stream fileStream, string fileName, string folder)
+        public async Task<string> SaveAsync(Stream fileStream, string fileName, string folder, string? overrideName = null)
         {
-            var uniqueName = $"{Guid.NewGuid()}{Path.GetExtension(fileName)}";
-            var key = $"{folder}/{uniqueName}";
+            var finalName = string.IsNullOrEmpty(overrideName)
+                ? $"{Guid.NewGuid()}{Path.GetExtension(fileName)}"
+                : $"{overrideName}{Path.GetExtension(fileName)}";
+
+            var key = $"{folder}/{finalName}";
 
             await _s3.PutObjectAsync(new Amazon.S3.Model.PutObjectRequest
             {

@@ -34,12 +34,12 @@ namespace neco_board_ce.Controllers.Files
         /// Upload Avatar
         /// </summary>
         /// <remarks>
-        /// Saves the uploaded image to storage and updates the authenticated user's
-        /// avatar path in the database. The previous file is not removed from storage.
-        /// Returns the new storage path on success.
+        /// Saves the uploaded image to storage using the authenticated user's ID as the filename.
+        /// This ensures each user has only one avatar file. If an avatar already exists, it is overwritten.
+        /// Returns the storage path on success.
         /// </remarks>
         /// <param name="file">Image file to upload.</param>
-        /// <response code="200">Avatar uploaded successfully. Response body contains the new storage path.</response>
+        /// <response code="200">Avatar uploaded successfully. Response body contains the storage path.</response>
         /// <response code="400">Repository failed to update the avatar path. Response body contains the error description.</response>
         /// <response code="401">The request is not authenticated.</response>
         [HttpPost(Name = "UploadAvatar")]
@@ -50,33 +50,28 @@ namespace neco_board_ce.Controllers.Files
         {
             if (UserId is null) return Unauthorized();
 
-            var existing = await _repository.GetById(UserId);
-            var oldPath = existing.Data?.Avatar;
-
             await using var stream = file.OpenReadStream();
-            var path = await _storage.SaveAsync(stream, file.FileName, "avatars");
+            // Use UserId as overrideName to keep storage clean and deterministic.
+            var path = await _storage.SaveAsync(stream, file.FileName, "avatars", UserId);
+            
             var result = await _repository.UpdateAvatar(UserId, path);
-            if (!result.Success) return BadRequest(new { result.Message });
-
-            if (!string.IsNullOrEmpty(oldPath))
-                await _storage.DeleteAsync(oldPath);
+            if (!result.Success) return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Failed to update profile." });
 
             return Ok(new { path });
         }
 
         /// <summary>
-        /// Get Avatar
+        /// Get Avatar by File Path
         /// </summary>
         /// <remarks>
         /// Returns the raw image bytes for the given storage path.
-        /// The path is URL-decoded before being passed to the storage backend,
-        /// so percent-encoded separators are handled transparently.
-        /// Always returns <c>image/jpeg</c> as the content type regardless of the original format.
+        /// The path must start with the <c>avatars/</c> prefix.
+        /// Always returns <c>image/jpeg</c> as the content type.
         /// </remarks>
-        /// <param name="filePath">The storage path of the avatar (supports catch-all with slashes).</param>
+        /// <param name="filePath">The storage path of the avatar (e.g., "avatars/unique-id.jpg").</param>
         /// <response code="200">Returns the avatar image.</response>
         /// <response code="401">The request is not authenticated.</response>
-        /// <response code="404">No file found at the given storage path.</response>
+        /// <response code="404">No file found at the given storage path or path is invalid.</response>
         [HttpGet("{*filePath}", Name = "GetAvatar")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -85,22 +80,15 @@ namespace neco_board_ce.Controllers.Files
         {
             var decodedPath = Uri.UnescapeDataString(filePath);
 
-            // Normalize and reject any path that escapes the avatars folder.
-            var normalized = Path.GetFullPath(decodedPath).Replace('\\', '/');
-            if (!normalized.StartsWith("avatars/", StringComparison.OrdinalIgnoreCase))
+            if (!decodedPath.StartsWith("avatars/", StringComparison.OrdinalIgnoreCase))
                 return NotFound();
 
             try
             {
                 var stream = await _storage.GetAsync(decodedPath);
-                if (stream is null) return NotFound();
                 return File(stream, "image/jpeg");
             }
-            catch (UnauthorizedAccessException)
-            {
-                return NotFound();
-            }
-            catch (FileNotFoundException)
+            catch (Exception ex) when (ex is FileNotFoundException or UnauthorizedAccessException)
             {
                 return NotFound();
             }
