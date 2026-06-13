@@ -151,14 +151,14 @@ namespace neco_board_ce.Repositories.Tables
         public async Task<RepositoryResult<bool>> MoveToColumn(string id, string columnId)
         {
             _logger.LogDebug("Moving task with ID: {Id} to column ID: {ColumnId} in the database.", id, columnId);
-            var existing = await _db.ColumnTasks.FindAsync(id);
+            var existing = await _db.ColumnTasks.Where(t => t.Id == id).Include(t => t.Column).FirstOrDefaultAsync();
             if (existing is null)
             {
                 _logger.LogWarning("Task with ID: {Id} not found in the database.", id);
                 return new RepositoryResult<bool> { Success = false, Message = "Task not found." };
             }
 
-            var columnExists = await _db.Columns.AnyAsync(c => c.Id == columnId);
+            var columnExists = await _db.Columns.AnyAsync(c => c.ProjectId == existing.Column.ProjectId && c.Id == columnId);
             if (!columnExists)
             {
                 _logger.LogWarning("Column with ID: {ColumnId} not found in the database.", columnId);
