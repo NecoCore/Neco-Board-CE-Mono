@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using neco_board_ce.Models.DTO.Request;
 using neco_board_ce.Models.DTO.Response.Auth;
 using neco_board_ce.Models.DTO.Response.Messages;
@@ -20,6 +21,7 @@ namespace neco_board_ce.Controllers.API
     [ApiController]
     [Route("api/[controller]")]
     [Tags("Authentication")]
+    [EnableRateLimiting("AuthPolicy")]
     public class AuthController : ControllerBase
     {
         private readonly AuthService _authService;

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using neco_board_ce.Controllers.Hubs;
@@ -139,6 +140,20 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<UserAccessCheck>();
 builder.Services.AddSingleton<IRealtimeNotifier, RealtimeNotifier>();
 
+// Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("AuthPolicy", opt =>
+    {
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.PermitLimit = 10;
+        opt.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 2;
+    });
+
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+
 // Global exception handling → RFC 7807 ProblemDetails
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -271,6 +286,7 @@ else
 }
 
 app.UseRouting();
+app.UseRateLimiter();
 // CORS must sit between UseRouting and UseAuthentication.
 app.UseCors(app.Environment.IsDevelopment() ? "DevCors" : "ProdCors");
 app.UseAuthentication();
