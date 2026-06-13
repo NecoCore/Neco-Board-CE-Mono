@@ -1,8 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
-using neco_board_ce.Controllers.Hubs;
-using neco_board_ce.Data;
 using neco_board_ce.Interfaces;
 using neco_board_ce.Models.DTO.Request;
 using neco_board_ce.Models.DTO.Response.Column;
@@ -259,12 +256,9 @@ namespace neco_board_ce.Controllers.API
         /// Permanently deletes a column and all its contents from the project.
         /// Requires at least the <c>MODERATOR</c> role in the parent project,
         /// or workspace administrator privileges.
-        /// <paramref name="projectId"/> is a query string parameter used to resolve
-        /// project membership and to target the SignalR broadcast group.
         /// On success, broadcasts <c>SOCKET_EVENT_COLUMN_DELETED</c> to the project's SignalR group.
         /// </remarks>
         /// <param name="columnId">The unique identifier of the column to delete (route parameter).</param>
-        /// <param name="projectId">The unique identifier of the parent project (query parameter).</param>
         /// <returns>
         /// <see cref="NoContentResult"/> on success;
         /// <see cref="UnauthorizedResult"/> when the caller is not authenticated;
@@ -280,15 +274,15 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> DeleteColumn(string columnId, string projectId)
+        public async Task<IActionResult> DeleteColumn(string columnId)
         {
-            var accessResult = await _userAccess.HasAccessToProject(UserId!, projectId, ProjectRole.MODERATOR);
+            var accessResult = await _userAccess.HasAccessToColumn(UserId!, columnId, ProjectRole.MODERATOR);
             if (!IsWorkspaceAdmin() && !accessResult.Result) return Forbid();
 
             var result = await _repository.Delete(columnId);
             if (result.Success)
             {
-                await _notifier.ColumnDelete(projectId, columnId);
+                await _notifier.ColumnDelete(accessResult.ProjectId!, columnId);
                 return NoContent();
             }
 
