@@ -42,9 +42,9 @@ namespace neco_board_ce.Services.Authentication
             await _accountRepository.Create(account);
 
             var accessToken = _jwtService.GenerateAccessToken(account);
-            var refreshToken = await _jwtService.GenerateRefreshToken(account.Id);
+            var (_, rawToken) = await _jwtService.GenerateRefreshToken(account.Id);
 
-            return new AuthResult(true, AccessToken: accessToken, RefreshToken: refreshToken.Token);
+            return new AuthResult(true, AccessToken: accessToken, RefreshToken: rawToken);
         }
 
         public async Task<AuthResult> LoginAsync(LoginRequest dto)
@@ -57,16 +57,17 @@ namespace neco_board_ce.Services.Authentication
                 return new AuthResult(false, Error: "Invalid login or password");
 
             var accessToken = _jwtService.GenerateAccessToken(account);
-            var refreshToken = await _jwtService.GenerateRefreshToken(account.Id);
+            var (_, rawToken) = await _jwtService.GenerateRefreshToken(account.Id);
 
-            return new AuthResult(true, AccessToken: accessToken, RefreshToken: refreshToken.Token);
+            return new AuthResult(true, AccessToken: accessToken, RefreshToken: rawToken);
         }
 
         public async Task<AuthResult> RefreshAsync(string refreshToken)
         {
+            var hashedToken = _jwtService.HashToken(refreshToken);
             var token = await _db.RefreshTokens
                 .Include(t => t.Account)
-                .FirstOrDefaultAsync(t => t.Token == refreshToken);
+                .FirstOrDefaultAsync(t => t.Token == hashedToken);
 
             if (token is null)
             {
@@ -99,15 +100,16 @@ namespace neco_board_ce.Services.Authentication
             }
 
             var accessToken = _jwtService.GenerateAccessToken(token.Account);
-            var newRefreshToken = await _jwtService.GenerateRefreshToken(token.Account.Id);
+            var (_, newRawToken) = await _jwtService.GenerateRefreshToken(token.Account.Id);
 
-            return new AuthResult(true, AccessToken: accessToken, RefreshToken: newRefreshToken.Token);
+            return new AuthResult(true, AccessToken: accessToken, RefreshToken: newRawToken);
         }
 
         public async Task RevokeAsync(string refreshToken)
         {
+            var hashedToken = _jwtService.HashToken(refreshToken);
             var token = await _db.RefreshTokens
-                .FirstOrDefaultAsync(t => t.Token == refreshToken);
+                .FirstOrDefaultAsync(t => t.Token == hashedToken);
 
             if (token is not null)
             {

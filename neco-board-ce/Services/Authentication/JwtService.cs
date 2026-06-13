@@ -45,11 +45,12 @@ namespace neco_board_ce.Services.Authentication
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public async Task<RefreshTokens> GenerateRefreshToken(string accountId)
+        public async Task<(RefreshTokens Entity, string RawToken)> GenerateRefreshToken(string accountId)
         {
+            var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
             var refreshToken = new RefreshTokens
             {
-                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                Token = HashToken(rawToken),
                 AccountId = accountId,
                 ExpiresAt = DateTime.UtcNow.AddDays(
                     _config.GetValue<int>("Jwt:RefreshTtl", 7)
@@ -63,10 +64,17 @@ namespace neco_board_ce.Services.Authentication
             _db.RefreshTokens.Add(refreshToken);
             await _db.SaveChangesAsync();
 
-            return refreshToken;
+            return (refreshToken, rawToken);
         }
 
         public string? GetAccountId(ClaimsPrincipal user) =>
             user.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        public string HashToken(string token)
+        {
+            using var sha256 = SHA256.Create();
+            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(token));
+            return Convert.ToBase64String(bytes);
+        }
     }
 }
