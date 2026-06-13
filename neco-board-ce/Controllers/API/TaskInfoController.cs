@@ -81,7 +81,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> UpdateStatus(string taskId, [FromBody] EditTaskStatusRequest dto)
         {
-            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.USER);
+            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.VIEWER);
             if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var result = await _repository.UpdateStatus(taskId, dto.Status);
@@ -125,7 +125,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> UpdatePriority(string taskId, [FromBody] EditTaskPriorityRequest dto)
         {
-            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.USER);
+            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.VIEWER);
             if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var result = await _repository.UpdatePriority(taskId, dto.Priority);
@@ -226,9 +226,9 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> AddUser(string taskId, [FromBody] AddUserInTaskRequest dto)
         {
-            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.USER);
+            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.VIEWER);
             if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
-            accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.MODERATOR);
+            accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.USER);
             if (!accessResult.Result && dto.UserId is not null) return Forbid();
 
             string targetUserId = dto.UserId ?? UserId!;
@@ -291,9 +291,9 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> RemoveUser(string taskId, [FromBody] AddUserInTaskRequest dto)
         {
-            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.USER);
+            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.VIEWER);
             if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
-            accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.MODERATOR);
+            accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.USER);
             if (!accessResult.Result && dto.UserId is not null) return Forbid();
 
             string targetUserId = dto.UserId ?? UserId!;

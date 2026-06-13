@@ -129,7 +129,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> CreateColumnProject(string projectId, [FromBody] ColumnRequest dto)
         {
-            var accessResult = await _userAccess.HasAccessToProject(UserId!, projectId, ProjectRole.MODERATOR);
+            var accessResult = await _userAccess.HasAccessToProject(UserId!, projectId, ProjectRole.USER);
             if (!IsWorkspaceAdmin() && !accessResult.Result) return Forbid();
 
             var result = await _repository.GetByProjectId(projectId);
@@ -184,7 +184,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UpdateColumn(string columnId, [FromBody] ColumnRequest dto)
         {
-            var accessResult = await _userAccess.HasAccessToColumn(UserId!, columnId, ProjectRole.MODERATOR);
+            var accessResult = await _userAccess.HasAccessToColumn(UserId!, columnId, ProjectRole.USER);
             if (!IsWorkspaceAdmin() && !accessResult.Result) return Forbid();
 
             var updateColumn = new Column
@@ -234,7 +234,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UpdateColumnOrder(string columnId, [FromBody] int queue)
         {
-            var accessResult = await _userAccess.HasAccessToColumn(UserId!, columnId, ProjectRole.MODERATOR);
+            var accessResult = await _userAccess.HasAccessToColumn(UserId!, columnId, ProjectRole.USER);
             if (!IsWorkspaceAdmin() && !accessResult.Result) return Forbid();
 
             var result = await _repository.UpdateOrder(accessResult.ProjectId!, columnId, queue);
@@ -276,7 +276,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteColumn(string columnId)
         {
-            var accessResult = await _userAccess.HasAccessToColumn(UserId!, columnId, ProjectRole.MODERATOR);
+            var accessResult = await _userAccess.HasAccessToColumn(UserId!, columnId, ProjectRole.USER);
             if (!IsWorkspaceAdmin() && !accessResult.Result) return Forbid();
 
             var result = await _repository.Delete(columnId);

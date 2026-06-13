@@ -223,7 +223,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Update(string taskId, [FromBody] TaskColumnRequest dto)
         {
-            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.USER);
+            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.VIEWER);
             if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var task = new ColumnTask
@@ -277,7 +277,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> UpdateColumn(string projectId, string taskId, string columnId, [FromBody] EditTaskColumnRequest dto)
         {
-            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.USER);
+            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.VIEWER);
             if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var result = await _repository.MoveToColumn(taskId, dto.ColumnId);
@@ -323,7 +323,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> DeleteTask(string projectId, string taskId)
         {
-            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.USER);
+            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.VIEWER);
             if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var result = await _repository.Delete(taskId);

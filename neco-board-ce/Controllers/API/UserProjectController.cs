@@ -125,7 +125,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> AddUserInProject([FromBody] UserProjectRequest dto, string projectId)
         {
-            var accessResult = await _userAccess.HasAccessToProject(UserId!, projectId, ProjectRole.MODERATOR);
+            var accessResult = await _userAccess.HasAccessToProject(UserId!, projectId, ProjectRole.USER);
             if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var result = await _repository.AddToProject(dto.Id, projectId, dto.Role);
@@ -180,7 +180,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UpdateUserInProject(string projectId, string userId, [FromBody] EditUserInProjectRequest dto)
         {
-            var accessResult = await _userAccess.HasAccessToProject(UserId!, projectId, ProjectRole.MODERATOR);
+            var accessResult = await _userAccess.HasAccessToProject(UserId!, projectId, ProjectRole.USER);
             if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var result = await _repository.GetByUserAndProject(userId, projectId);
@@ -253,7 +253,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteUserInProject(string projectId, string userId)
         {
-            var accessResult = await _userAccess.HasAccessToProject(UserId!, projectId, ProjectRole.MODERATOR);
+            var accessResult = await _userAccess.HasAccessToProject(UserId!, projectId, ProjectRole.USER);
             if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var result = await _repository.GetByUserAndProject(userId, projectId);
