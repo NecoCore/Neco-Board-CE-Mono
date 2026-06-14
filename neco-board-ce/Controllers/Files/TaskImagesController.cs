@@ -114,7 +114,7 @@ namespace neco_board_ce.Controllers.Files
             if (!access.Result && !IsWorkspaceAdmin()) return Forbid();
 
             await using var stream = file.OpenReadStream();
-            var path = await _storage.SaveAsync(stream, file.FileName, $"tasks/{taskId}/images");
+            var path = await _storage.SaveAsync(stream, file.FileName, $"{Constants.Storage.FolderTasks}/{taskId}/{Constants.Storage.SubfolderImages}");
 
             var entity = new TaskImages
             {

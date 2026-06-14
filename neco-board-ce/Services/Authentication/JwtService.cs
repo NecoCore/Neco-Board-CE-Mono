@@ -26,8 +26,8 @@ namespace neco_board_ce.Services.Authentication
                 new Claim(ClaimTypes.NameIdentifier, account.Id.ToString()),
                 new Claim(ClaimTypes.Name, account.Login),
                 new Claim(ClaimTypes.Role, account.Role.ToString()),
-                new Claim("name", account.Name),
-                new Claim("avatar", account.Avatar ?? string.Empty)
+                new Claim(Constants.Auth.ClaimName, account.Name),
+                new Claim(Constants.Auth.ClaimAvatar, account.Avatar ?? string.Empty)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Secret"]!));

@@ -122,7 +122,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Refresh()
         {
-            var refreshToken = Request.Cookies["refreshToken"];
+            var refreshToken = Request.Cookies[Constants.Auth.RefreshTokenCookie];
             if (refreshToken is null)
             {
                 _logger.LogWarning("Refresh token is missing in the request.");
@@ -158,11 +158,11 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> Logout()
         {
-            var refreshToken = Request.Cookies["refreshToken"];
+            var refreshToken = Request.Cookies[Constants.Auth.RefreshTokenCookie];
             if (refreshToken is not null)
             {
                 await _authService.RevokeAsync(refreshToken);
-                Response.Cookies.Delete("refreshToken");
+                Response.Cookies.Delete(Constants.Auth.RefreshTokenCookie);
                 _logger.LogInformation("User logged out successfully.");
             } else
             {
@@ -201,8 +201,8 @@ namespace neco_board_ce.Controllers.API
             Id = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!),
             Login = User.FindFirstValue(ClaimTypes.Name)!,
             Role = User.FindFirstValue(ClaimTypes.Role)!,
-            Name = User.FindFirstValue("name")!,
-            Avatar = User.FindFirstValue("avatar")
+            Name = User.FindFirstValue(Constants.Auth.ClaimName)!,
+            Avatar = User.FindFirstValue(Constants.Auth.ClaimAvatar)
         });
 
         private void SetRefreshTokenCookie(string token)
@@ -211,7 +211,7 @@ namespace neco_board_ce.Controllers.API
             // Secure + SameSite=None to be sent on cross-site requests. In development (http://localhost)
             // Secure would drop the cookie, so fall back to an insecure Lax cookie there.
             var isDev = _env.IsDevelopment();
-            Response.Cookies.Append("refreshToken", token, new CookieOptions
+            Response.Cookies.Append(Constants.Auth.RefreshTokenCookie, token, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = !isDev,

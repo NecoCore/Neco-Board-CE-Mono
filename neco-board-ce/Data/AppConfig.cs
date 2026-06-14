@@ -40,60 +40,60 @@ namespace neco_board_ce.Data
 
         public static void GetDatabase(IServiceCollection services, IConfiguration config)
         {
-            var dbType = config["Database:Type"]?.ToLower() ?? "sqlite";
+            var dbType = config["Database:Type"]?.ToLower() ?? Constants.Database.ProviderSqlite;
             var dbHost = config["Database:Host"];
             var dbPort = config["Database:Port"];
-            var dbName = config["Database:Name"] ?? "neco-board-ce";
+            var dbName = config["Database:Name"] ?? Constants.Database.DefaultName;
             var dbUser = config["Database:User"];
             var dbPass = config["Database:Password"];
 
             switch (dbType)
             {
-                case "postgres":
+                case Constants.Database.ProviderPostgres:
                     services.AddDbContext<AppDbContext, PostgresDbContext>(options => 
                         options.UseNpgsql(
                             $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass};",
                             x => x.MigrationsAssembly("neco-board-ce")
-                                    .MigrationsHistoryTable("__migrations", "public")));
+                                    .MigrationsHistoryTable(Constants.Database.MigrationsTable, Constants.Database.DefaultSchema)));
                     break;
 
-                case "mssql":
+                case Constants.Database.ProviderMsSql:
                     services.AddDbContext<AppDbContext, MsSqlDbContext>(options =>
                         options.UseSqlServer(
                             $"Server={dbHost},{dbPort};Database={dbName};User Id={dbUser};Password={dbPass};Encrypt=True;TrustServerCertificate=True;",
                             x => x.MigrationsAssembly("neco-board-ce")
-                                    .MigrationsHistoryTable("__migrations")));
+                                    .MigrationsHistoryTable(Constants.Database.MigrationsTable)));
                     break;
 
-                case "mysql":
+                case Constants.Database.ProviderMySql:
                     services.AddDbContext<AppDbContext, MySqlDbContext>(options =>
                         options.UseMySQL(
                             $"Server={dbHost};Port={dbPort};Database={dbName};User={dbUser};Password={dbPass};",
                             x => x.MigrationsAssembly("neco-board-ce")
-                                   .MigrationsHistoryTable("__migrations")));
+                                   .MigrationsHistoryTable(Constants.Database.MigrationsTable)));
                     break;
 
-                case "sqlite":
+                case Constants.Database.ProviderSqlite:
                 default:
                     services.AddDbContext<AppDbContext, SqliteDbContext>(options =>
                         options.UseSqlite(
                             $"Data Source={dbName}.db",
                             x => x.MigrationsAssembly("neco-board-ce")
-                                   .MigrationsHistoryTable("__migrations")));
+                                   .MigrationsHistoryTable(Constants.Database.MigrationsTable)));
                     break;
             }
         }
 
         public static void AddFileStorage(IServiceCollection services, IConfiguration config)
         {
-            var storageType = config["Storage:Type"]?.ToLower() ?? "local";
+            var storageType = config["Storage:Type"]?.ToLower() ?? Constants.Storage.TypeLocal;
 
             switch (storageType)
             {
-                case "s3":
+                case Constants.Storage.TypeS3:
                     services.AddSingleton<IFileStorage, S3FileStorage>();
                     break;
-                case "local":
+                case Constants.Storage.TypeLocal:
                 default:
                     services.AddSingleton<IFileStorage, LocalFileStorage>();
                     break;
@@ -104,8 +104,8 @@ namespace neco_board_ce.Data
         {
             await db.Database.MigrateAsync();
 
-            string adminLogin = config["Admin:Username"] ?? "admin";
-            string adminPass = config["Admin:Password"] ?? "admin123";
+            string adminLogin = config["Admin:Username"] ?? Constants.Admin.DefaultUsername;
+            string adminPass = config["Admin:Password"] ?? Constants.Admin.DefaultPassword;
 
             if (!db.Accounts.Any(a => a.Login == adminLogin))
             {
@@ -115,6 +115,14 @@ namespace neco_board_ce.Data
                     Login = adminLogin,
                     Password = BCrypt.Net.BCrypt.HashPassword(adminPass),
                     Role = neco_board_ce.Models.Enums.WorkspaceRoles.OWNER
+                });
+
+                await db.SaveChangesAsync();
+            }
+        }
+    }
+}
+eRoles.OWNER
                 });
 
                 await db.SaveChangesAsync();

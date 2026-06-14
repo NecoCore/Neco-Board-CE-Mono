@@ -33,9 +33,9 @@ if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddCors(options =>
     {
-        options.AddPolicy("DevCors", policy =>
+        options.AddPolicy(Constants.Cors.DevPolicy, policy =>
         {
-            policy.WithOrigins("http://localhost:5173")
+            policy.WithOrigins(Constants.Cors.DevOrigin)
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();
@@ -53,7 +53,7 @@ else
     var allowedOrigins = rawOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     builder.Services.AddCors(options =>
     {
-        options.AddPolicy("ProdCors", policy =>
+        options.AddPolicy(Constants.Cors.ProdPolicy, policy =>
         {
             policy.WithOrigins(allowedOrigins)
                   .AllowAnyHeader()
@@ -118,10 +118,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             OnMessageReceived = context =>
             {
-                var accessToken = context.Request.Query["access_token"];
+                var accessToken = context.Request.Query[Constants.Auth.AccessTokenQueryParam];
                 var path = context.HttpContext.Request.Path;
 
-                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/conn"))
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments(Constants.SignalR.HubPath))
                 {
                     context.Token = accessToken;
                 }
@@ -156,7 +156,7 @@ builder.Services.AddScoped<IAuthorizationHandler, ProjectAccessHandler>();
 // Rate Limiting
 builder.Services.AddRateLimiter(options =>
 {
-    options.AddFixedWindowLimiter("AuthPolicy", opt =>
+    options.AddFixedWindowLimiter(Constants.Auth.Policy, opt =>
     {
         opt.Window = TimeSpan.FromMinutes(1);
         opt.PermitLimit = 10;
@@ -187,7 +187,7 @@ builder.Services.AddOpenApi(options =>
         document.Components ??= new();
         document.Components.SecuritySchemes = new Dictionary<string, IOpenApiSecurityScheme>
         {
-            ["Bearer"] = new OpenApiSecurityScheme
+            [Constants.Auth.BearerScheme] = new OpenApiSecurityScheme
             {
                 Type = SecuritySchemeType.Http,
                 Scheme = "bearer",
@@ -211,7 +211,7 @@ builder.Services.AddOpenApi(options =>
             new OpenApiSecurityRequirement
             {
                 {
-                    new OpenApiSecuritySchemeReference("Bearer"),
+                    new OpenApiSecuritySchemeReference(Constants.Auth.BearerScheme),
                     new List<string>()
                 }
             }
@@ -264,7 +264,7 @@ app.UseExceptionHandler();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapScalarApiReference("/docs/rest", options =>
+    app.MapScalarApiReference(Constants.Docs.RestPath, options =>
     {
         options.Title = "Board CE REST API";
     });
@@ -272,9 +272,9 @@ if (app.Environment.IsDevelopment())
     app.MapAsyncApiDocuments();
     // Saunter's bundled UI (asyncapi-react 1.0.1) can't render the 2.4.0 document it generates,
     // so we serve our own page with a modern asyncapi-react from a CDN.
-    app.MapGet("/docs/socket", () => Results.Content(AsyncApiUi.Html, "text/html"));
+    app.MapGet(Constants.Docs.SocketPath, () => Results.Content(AsyncApiUi.Html, "text/html"));
 
-    app.MapGet("/docs/full/raw", async context =>
+    app.MapGet(Constants.Docs.FullRawPath, async context =>
     {
         var xmlFileName = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
         var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFileName);
@@ -291,7 +291,7 @@ if (app.Environment.IsDevelopment())
         }
     });
 
-    app.MapGet("/docs/full", () => Results.Content(DocsXmlUi.Html, "text/html"));
+    app.MapGet(Constants.Docs.FullUiPath, () => Results.Content(DocsXmlUi.Html, "text/html"));
 }
 else
 {
@@ -301,11 +301,11 @@ else
 app.UseRouting();
 app.UseRateLimiter();
 // CORS must sit between UseRouting and UseAuthentication.
-app.UseCors(app.Environment.IsDevelopment() ? "DevCors" : "ProdCors");
+app.UseCors(app.Environment.IsDevelopment() ? Constants.Cors.DevPolicy : Constants.Cors.ProdPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-app.MapHub<AppHub>("/conn");
+app.MapHub<AppHub>(Constants.SignalR.HubPath);
 
 app.Run();

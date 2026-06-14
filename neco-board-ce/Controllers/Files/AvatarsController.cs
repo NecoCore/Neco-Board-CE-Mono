@@ -52,7 +52,7 @@ namespace neco_board_ce.Controllers.Files
 
             await using var stream = file.OpenReadStream();
             // Use UserId as overrideName to keep storage clean and deterministic.
-            var path = await _storage.SaveAsync(stream, file.FileName, "avatars", UserId.Value.ToString());
+            var path = await _storage.SaveAsync(stream, file.FileName, Constants.Storage.FolderAvatars, UserId.Value.ToString());
             
             var result = await _repository.UpdateAvatar(UserId.Value, path);
             if (!result.Success) return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Failed to update profile." });
