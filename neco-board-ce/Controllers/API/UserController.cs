@@ -182,26 +182,26 @@ namespace neco_board_ce.Controllers.API
         /// Get All Users For Admins
         /// </summary>
         /// <remarks>
-        /// Returns the full account list with all fields. Restricted to administrators and owners.
-        /// Returns the raw <see cref="Account"/> entities without field filtering.
-        /// Intended for administrative use only.
+        /// Returns the full account list with detailed fields. Restricted to administrators and owners.
+        /// Each item is mapped to an <see cref="AccountDetailResponse"/> which includes
+        /// account statistics while excluding sensitive data like passwords and tokens.
         /// Returns <c>204 No Content</c> when the repository succeeds but no users exist.
         /// </remarks>
         /// <returns>
-        /// <see cref="OkObjectResult"/> with a list of <see cref="Account"/> on success;
+        /// <see cref="OkObjectResult"/> with a list of <see cref="AccountDetailResponse"/> on success;
         /// <see cref="NoContentResult"/> when no users exist;
         /// <see cref="UnauthorizedResult"/> when the caller is not authenticated;
         /// <see cref="ForbidResult"/> when the caller lacks the ADMIN or OWNER role;
         /// <see cref="StatusCodeResult"/> 500 with <see cref="ErrorMessageResponse"/> on repository failure.
         /// </returns>
-        /// <response code="200">Returns the full account list.</response>
+        /// <response code="200">Returns the detailed account list.</response>
         /// <response code="204">No users are registered in the workspace.</response>
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller does not hold the ADMIN or OWNER role.</response>
         /// <response code="500">Repository or infrastructure failure. Response body contains the error description.</response>
         [HttpGet("all", Name = "GetAllUsersForAdmins")]
         [Authorize(Roles = "ADMIN,OWNER")]
-        [ProducesResponseType(typeof(List<Account>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<AccountDetailResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -216,7 +216,9 @@ namespace neco_board_ce.Controllers.API
                     new ErrorMessageResponse { Message = "Unable to retrieve the user list. Please try again later." });
             }
             else if (resut.Data is null) return NoContent();
-            return Ok(resut.Data);
+
+            var data = resut.Data.Select(x => new AccountDetailResponse(x)).ToList();
+            return Ok(data);
         }
 
         /// <summary>

@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using neco_board_ce.Data;
-using neco_board_ce.Models.DTO.Request;
+using neco_board_ce.Models.DTO.Request.Auth;
 using neco_board_ce.Models.Entity;
 using neco_board_ce.Models.Results;
 using neco_board_ce.Repositories.Tables;

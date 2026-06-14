@@ -103,19 +103,19 @@ namespace neco_board_ce.Controllers.API
         /// </remarks>
         /// <param name="id">The unique identifier of the project to retrieve.</param>
         /// <returns>
-        /// <see cref="OkObjectResult"/> with the <see cref="Project"/> entity on success;
+        /// <see cref="OkObjectResult"/> with the <see cref="ProjectDetailResponse"/> on success;
         /// <see cref="NotFoundObjectResult"/> with <see cref="ErrorMessageResponse"/> when not found;
         /// <see cref="UnauthorizedResult"/> when the caller is not authenticated;
         /// <see cref="ForbidResult"/> when the caller is not a project member and is not a workspace admin;
         /// <see cref="StatusCodeResult"/> 500 with <see cref="ErrorMessageResponse"/> on repository failure.
         /// </returns>
-        /// <response code="200">Returns the full project entity.</response>
+        /// <response code="200">Returns the detailed project information.</response>
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller is not a project member and is not a workspace administrator.</response>
         /// <response code="404">No project found for the provided identifier.</response>
         /// <response code="500">Repository or infrastructure failure. Response body contains the error description.</response>
         [HttpGet("{id}", Name = "GetProjectById")]
-        [ProducesResponseType(typeof(Project), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProjectDetailResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status404NotFound)]
@@ -128,9 +128,10 @@ namespace neco_board_ce.Controllers.API
             var result = await _repository.GetById(id);
             if (result.Success)
             {
-                return result.Data is null ?
-                    NotFound(new ErrorMessageResponse { Message = $"Project '{id}' was not found." }) :
-                    Ok(result.Data);
+                if (result.Data is null)
+                    return NotFound(new ErrorMessageResponse { Message = $"Project '{id}' was not found." });
+
+                return Ok(new ProjectDetailResponse(result.Data));
             }
             _logger.LogError("Failed to retrieve project '{ProjectId}': {Error}", id, result.Message ?? "unknown error");
             return StatusCode(StatusCodes.Status500InternalServerError,

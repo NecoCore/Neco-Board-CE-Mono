@@ -115,18 +115,18 @@ namespace neco_board_ce.Controllers.API
         /// </remarks>
         /// <param name="taskId">The unique identifier of the task to retrieve.</param>
         /// <returns>
-        /// <see cref="OkObjectResult"/> with the <see cref="ColumnTask"/> entity on success;
+        /// <see cref="OkObjectResult"/> with the <see cref="TaskDetailResponse"/> entity on success;
         /// <see cref="NoContentResult"/> when no task exists for the given ID;
         /// <see cref="ForbidResult"/> when access is denied;
         /// <see cref="BadRequestObjectResult"/> when the repository operation fails.
         /// </returns>
-        /// <response code="200">Returns the full task entity.</response>
+        /// <response code="200">Returns the full task details.</response>
         /// <response code="204">No task found for the provided identifier.</response>
         /// <response code="400">Repository or database operation failed. Response body contains the error message.</response>
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller is not a project member and is not a workspace administrator.</response>
         [HttpGet("{taskId}", Name = "GetTaskById")]
-        [ProducesResponseType(typeof(ColumnTask), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(TaskDetailResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -140,7 +140,7 @@ namespace neco_board_ce.Controllers.API
             if (!task.Success) return BadRequest(new ErrorMessageResponse { Message = task.Message ?? "unknown error" });
             if (task.Data is null) return NoContent();
 
-            return Ok(task.Data);
+            return Ok(new TaskDetailResponse(task.Data));
         }
 
         /// <summary>
