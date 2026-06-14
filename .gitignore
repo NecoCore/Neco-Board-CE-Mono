@@ -20,9 +20,6 @@
 *.db-shm
 *.db-wal
 
-# EF migrations metadata
-**/Migrations/**/*/
-
 # Uploaded files
 uploads/
 .claude

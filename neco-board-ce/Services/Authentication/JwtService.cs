@@ -1,22 +1,23 @@
-﻿using Microsoft.IdentityModel.Tokens;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using neco_board_ce.Data;
 using neco_board_ce.Models.Entity;
-using System.Security.Cryptography;
 
 namespace neco_board_ce.Services.Authentication
 {
+    /// <summary>
+    /// Service for generating and parsing JWT (Access) tokens.
+    /// This service ONLY handles the token strings and claims, not persistence.
+    /// </summary>
     public class JwtService
     {
         private readonly IConfiguration _config;
-        private readonly AppDbContext _db;
 
-        public JwtService(IConfiguration config, AppDbContext db)
+        public JwtService(IConfiguration config)
         {
             _config = config;
-            _db = db;
         }
 
         public string GenerateAccessToken(Account account)
@@ -45,36 +46,7 @@ namespace neco_board_ce.Services.Authentication
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public async Task<(RefreshTokens Entity, string RawToken)> GenerateRefreshToken(Guid accountId)
-        {
-            var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-            var refreshToken = new RefreshTokens
-            {
-                Token = HashToken(rawToken),
-                AccountId = accountId,
-                ExpiresAt = DateTime.UtcNow.AddDays(
-                    _config.GetValue<int>("Jwt:RefreshTtl", 7)
-                )
-            };
-
-            _db.RefreshTokens.RemoveRange(
-                _db.RefreshTokens.Where(t => t.AccountId == accountId && t.ExpiresAt < DateTime.UtcNow)
-            );
-
-            _db.RefreshTokens.Add(refreshToken);
-            await _db.SaveChangesAsync();
-
-            return (refreshToken, rawToken);
-        }
-
         public string? GetAccountId(ClaimsPrincipal user) =>
             user.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        public string HashToken(string token)
-        {
-            using var sha256 = SHA256.Create();
-            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(token));
-            return Convert.ToBase64String(bytes);
-        }
     }
 }

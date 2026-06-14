@@ -1,5 +1,3 @@
-﻿using Microsoft.EntityFrameworkCore;
-using neco_board_ce.Data;
 using neco_board_ce.Models.DTO.Request.Auth;
 using neco_board_ce.Models.Entity;
 using neco_board_ce.Models.Results;
@@ -7,19 +5,19 @@ using neco_board_ce.Repositories.Tables;
 
 namespace neco_board_ce.Services.Authentication
 {
+    /// <summary>
+    /// Service responsible for high-level authentication workflows: Login and Registration.
+    /// It delegates session management to <see cref="SessionService"/>.
+    /// </summary>
     public class AuthService
     {
         private readonly AccountRepository _accountRepository;
-        private readonly AppDbContext _db;
-        private readonly JwtService _jwtService;
-        private readonly ILogger<AuthService> _logger;
+        private readonly SessionService _sessionService;
 
-        public AuthService(AccountRepository accountRepository, JwtService jwtService, AppDbContext db, ILogger<AuthService> logger)
+        public AuthService(AccountRepository accountRepository, SessionService sessionService)
         {
             _accountRepository = accountRepository;
-            _jwtService = jwtService;
-            _db = db;
-            _logger = logger;
+            _sessionService = sessionService;
         }
 
         public async Task<AuthResult> RegisterAsync(RegisterRequest dto)
@@ -41,10 +39,9 @@ namespace neco_board_ce.Services.Authentication
 
             await _accountRepository.Create(account);
 
-            var accessToken = _jwtService.GenerateAccessToken(account);
-            var (_, rawToken) = await _jwtService.GenerateRefreshToken(account.Id);
+            var (accessToken, refreshToken) = await _sessionService.CreateSessionAsync(account);
 
-            return new AuthResult(true, AccessToken: accessToken, RefreshToken: rawToken);
+            return new AuthResult(true, AccessToken: accessToken, RefreshToken: refreshToken);
         }
 
         public async Task<AuthResult> LoginAsync(LoginRequest dto)
@@ -59,73 +56,19 @@ namespace neco_board_ce.Services.Authentication
             account.LastLoginAt = DateTime.UtcNow;
             await _accountRepository.Update(account.Id, account);
 
-            var accessToken = _jwtService.GenerateAccessToken(account);
-            var (_, rawToken) = await _jwtService.GenerateRefreshToken(account.Id);
+            var (accessToken, refreshToken) = await _sessionService.CreateSessionAsync(account);
 
-            return new AuthResult(true, AccessToken: accessToken, RefreshToken: rawToken);
+            return new AuthResult(true, AccessToken: accessToken, RefreshToken: refreshToken);
         }
 
         public async Task<AuthResult> RefreshAsync(string refreshToken)
         {
-            var hashedToken = _jwtService.HashToken(refreshToken);
-            var token = await _db.RefreshTokens
-                .Include(t => t.Account)
-                .FirstOrDefaultAsync(t => t.Token == hashedToken);
-
-            if (token is null)
-            {
-                return new AuthResult(false, Error: "Invalid or expired refresh token");
-            }
-            if (token.ExpiresAt < DateTime.UtcNow)
-            {
-                try
-                {
-                    _db.RefreshTokens.Remove(token);
-                    await _db.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException err)
-                {
-                    _logger.LogError("Failed to delete expired refresh token: {}", err.Message);
-                }
-
-                return new AuthResult(false, Error: "Invalid or expired refresh token");
-            }
-
-            try
-            {
-                _db.RefreshTokens.Remove(token);
-                await _db.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException err)
-            {
-                _logger.LogWarning("Failed to delete refresh token after checks: {}", err.Message);
-                return new AuthResult(false, Error: "Token was already used by another concurrent request");
-            }
-
-            var accessToken = _jwtService.GenerateAccessToken(token.Account);
-            var (_, newRawToken) = await _jwtService.GenerateRefreshToken(token.Account.Id);
-
-            return new AuthResult(true, AccessToken: accessToken, RefreshToken: newRawToken);
+            return await _sessionService.RefreshSessionAsync(refreshToken);
         }
 
         public async Task RevokeAsync(string refreshToken)
         {
-            var hashedToken = _jwtService.HashToken(refreshToken);
-            var token = await _db.RefreshTokens
-                .FirstOrDefaultAsync(t => t.Token == hashedToken);
-
-            if (token is not null)
-            {
-                try
-                {
-                    _db.RefreshTokens.Remove(token);
-                    await _db.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException err)
-                {
-                    _logger.LogWarning("Failed to delete refresh token after logout: {Error}", err.Message);
-                }
-            }
+            await _sessionService.RevokeSessionAsync(refreshToken);
         }
     }
 }

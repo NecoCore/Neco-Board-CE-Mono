@@ -133,6 +133,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 // Register repositories
 builder.Services.AddScoped<AccountRepository>();
+builder.Services.AddScoped<TokenRepository>();
 builder.Services.AddScoped<ProjectRepository>();
 builder.Services.AddScoped<ColumnsRepository>();
 builder.Services.AddScoped<ColumnTaskRepository>();
@@ -145,6 +146,7 @@ builder.Services.AddScoped<LogsRepository>();
 // Register services
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<JwtService>();
+builder.Services.AddScoped<SessionService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<UserAccessCheck>();
 builder.Services.AddSingleton<IRealtimeNotifier, RealtimeNotifier>();
