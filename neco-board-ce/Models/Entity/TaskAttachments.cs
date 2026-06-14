@@ -9,30 +9,33 @@ namespace neco_board_ce.Models.Entity
     {
         [Key]
         [Column("id")]
-        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         [Required]
         [Column("task_id")]
-        public string TaskId { get; set; }
+        public Guid TaskId { get; set; }
 
         [ForeignKey(nameof(TaskId))]
         [InverseProperty(nameof(ColumnTask.Attachments))]
         [JsonIgnore]
-        public ColumnTask Task { get; set; }
+        public ColumnTask Task { get; set; } = null!;
 
         [Required]
         [MaxLength(200)]
         [Column("name")]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(50)]
         [Column("type")]
-        public string Type { get; set; }
+        public string Type { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(500)]
         [Column("file_path")]
-        public string FilePath { get; set; }
+        public string FilePath { get; set; } = string.Empty;
+
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }
