@@ -43,6 +43,7 @@ namespace neco_board_ce.Repositories.Tables
                     .Include(t => t.Users).ThenInclude(u => u.User)
                     .Include(t => t.Images)
                     .Include(t => t.Attachments)
+                    .AsSplitQuery()
                     .FirstOrDefaultAsync(t => t.Id == id);
                 return new RepositoryResult<ColumnTask?> { Success = true, Data = task };
             }

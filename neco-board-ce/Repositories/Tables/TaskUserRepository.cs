@@ -70,6 +70,7 @@ namespace neco_board_ce.Repositories.Tables
                         .ThenInclude(t => t.Column)
                             .ThenInclude(c => c.Project)
                     .Where(tu => tu.UserId == userId)
+                    .AsSplitQuery()
                     .ToListAsync();
                 return new RepositoryResult<List<TaskUser>> { Success = true, Data = taskUsers };
             }
