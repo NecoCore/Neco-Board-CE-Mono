@@ -54,7 +54,7 @@ namespace neco_board_ce.Attributes.ProjectAccessAttribute
 
             if(result.Result || isGlobalAdmin)
             {
-                httpContext.Items["ProjectId"] = result.ProjectId;
+                httpContext?.Items["ProjectId"] = result.ProjectId;
                 context.Succeed(requirement);
             }
         }

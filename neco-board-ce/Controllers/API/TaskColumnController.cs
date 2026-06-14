@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
-using neco_board_ce.Data;
+using neco_board_ce.Attributes.ProjectAccessAttribute;
 using neco_board_ce.Interfaces;
 using neco_board_ce.Models.DTO.Request.Tasks;
 using neco_board_ce.Models.DTO.Response.Messages;
@@ -32,21 +31,15 @@ namespace neco_board_ce.Controllers.API
     {
         private readonly ILogger<TaskColumnController> _logger;
         private readonly ColumnTaskRepository _repository;
-        private readonly TaskUserRepository _taskUserRepository;
         private readonly IRealtimeNotifier _notifier;
-        private readonly UserAccessCheck _userAccess;
 
         public TaskColumnController(
             ILogger<TaskColumnController> logger, 
-            UserAccessCheck userAccess, 
             ColumnTaskRepository repository, 
-            TaskUserRepository taskUserRepository, 
             IRealtimeNotifier notifier)
         {
             _logger = logger;
             _repository = repository;
-            _userAccess = userAccess;
-            _taskUserRepository = taskUserRepository;
             _notifier = notifier;
         }
 
@@ -75,6 +68,7 @@ namespace neco_board_ce.Controllers.API
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller is not a project member and is not a workspace administrator.</response>
         [HttpGet("in-column/{columnId}", Name = "GetTasksInColumn")]
+        [ProjectAccess]
         [ProducesResponseType(typeof(List<TaskResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
@@ -82,9 +76,6 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetInColumn(string columnId)
         {
-            var accessResult = await _userAccess.HasAccessToColumn(UserId!, columnId);
-            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
-
             var tasks = await _repository.GetByColumnId(columnId);
             if (!tasks.Success) return BadRequest(new ErrorMessageResponse { Message = tasks.Message ?? "unknown error" });
             if (tasks.Data is null) return NoContent();
@@ -126,6 +117,7 @@ namespace neco_board_ce.Controllers.API
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller is not a project member and is not a workspace administrator.</response>
         [HttpGet("{taskId}", Name = "GetTaskById")]
+        [ProjectAccess]
         [ProducesResponseType(typeof(TaskDetailResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
@@ -133,9 +125,6 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetTaskInfo(string taskId)
         {
-            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId);
-            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
-
             var task = await _repository.GetById(taskId);
             if (!task.Success) return BadRequest(new ErrorMessageResponse { Message = task.Message ?? "unknown error" });
             if (task.Data is null) return NoContent();
@@ -165,15 +154,13 @@ namespace neco_board_ce.Controllers.API
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller does not have VIEWER role in the project and is not a workspace administrator.</response>
         [HttpPost(Name = "CreateTask")]
+        [ProjectAccess(ProjectRole.VIEWER)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Create([FromBody] TaskColumnRequest dto)
         {
-            var accessResult = await _userAccess.HasAccessToColumn(UserId!, dto.ColumnId, ProjectRole.VIEWER);
-            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
-
             var task = new ColumnTask
             {
                 ColumnId = dto.ColumnId,
@@ -186,7 +173,7 @@ namespace neco_board_ce.Controllers.API
 
             if(result.Success)
             {
-                await _notifier.TaskCreated(accessResult.ProjectId!, dto.ColumnId);
+                await _notifier.TaskCreated(CurrentProjectId!, dto.ColumnId);
                 return Ok();
             }
             return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Unknown error" });
@@ -216,15 +203,13 @@ namespace neco_board_ce.Controllers.API
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller does not have VIEWER role in the project and is not a workspace administrator.</response>
         [HttpPut("{taskId}", Name = "UpdateTask")]
+        [ProjectAccess(ProjectRole.VIEWER)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Update(string taskId, [FromBody] TaskColumnRequest dto)
         {
-            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.VIEWER);
-            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
-
             var task = new ColumnTask
             {
                 OwnerId = UserId!,
@@ -236,7 +221,7 @@ namespace neco_board_ce.Controllers.API
 
             if (result.Success)
             {
-                await _notifier.TaskUpdated(accessResult.ProjectId!, taskId);
+                await _notifier.TaskUpdated(CurrentProjectId!, taskId);
                 return Ok();
             }
             return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Unknown error" });
@@ -270,20 +255,18 @@ namespace neco_board_ce.Controllers.API
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller does not have VIEWER role in the project and is not a workspace administrator.</response>
         [HttpPatch("{taskId}/column", Name = "MoveTaskToColumn")]
+        [ProjectAccess(ProjectRole.VIEWER)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> UpdateColumn(string projectId, string taskId, string columnId, [FromBody] EditTaskColumnRequest dto)
+        public async Task<IActionResult> UpdateColumn(string taskId, [FromBody] EditTaskColumnRequest dto)
         {
-            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.VIEWER);
-            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
-
             var result = await _repository.MoveToColumn(taskId, dto.ColumnId);
 
             if (result.Success)
             {
-                await _notifier.TaskColumnUpdated(projectId, columnId, dto.ColumnId);
+                await _notifier.TaskColumnUpdated(CurrentProjectId!, result.Message!, dto.ColumnId);
                 return Ok();
             }
             return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Unknown error" });
@@ -316,20 +299,18 @@ namespace neco_board_ce.Controllers.API
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller does not have VIEWER role in the project and is not a workspace administrator.</response>
         [HttpDelete("{taskId}", Name = "DeleteTask")]
+        [ProjectAccess(ProjectRole.VIEWER)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> DeleteTask(string projectId, string taskId)
         {
-            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.VIEWER);
-            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
-
             var result = await _repository.Delete(taskId);
 
             if (result.Success)
             {
-                await _notifier.TaskDelete(projectId, result.Message!, taskId);
+                await _notifier.TaskDelete(CurrentProjectId!, result.Message!, taskId);
                 return Ok();
             }
             return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Unknown error" });

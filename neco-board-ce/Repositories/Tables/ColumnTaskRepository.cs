@@ -158,6 +158,7 @@ namespace neco_board_ce.Repositories.Tables
                 _logger.LogWarning("Task with ID: {Id} not found in the database.", id);
                 return new RepositoryResult<bool> { Success = false, Message = "Task not found." };
             }
+            var oldColumnId = existing.ColumnId;
 
             var columnExists = await _db.Columns.AnyAsync(c => c.ProjectId == existing.Column.ProjectId && c.Id == columnId);
             if (!columnExists)
@@ -169,7 +170,7 @@ namespace neco_board_ce.Repositories.Tables
             existing.ColumnId = columnId;
             _db.ColumnTasks.Update(existing);
             var saved = await _db.SaveChangesAsync() > 0;
-            return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to move task to column." };
+            return new RepositoryResult<bool> { Success = saved, Message = saved ? oldColumnId : "Failed to move task to column." };
         }
 
         public async Task<RepositoryResult<bool>> Delete(string id)

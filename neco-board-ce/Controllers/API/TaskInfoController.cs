@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using neco_board_ce.Attributes.ProjectAccessAttribute;
 using neco_board_ce.Data;
 using neco_board_ce.Interfaces;
 using neco_board_ce.Models.DTO.Request.Tasks;
@@ -75,20 +76,18 @@ namespace neco_board_ce.Controllers.API
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller does not have VIEWER role in the project and is not a workspace administrator.</response>
         [HttpPatch("status", Name = "UpdateTaskStatus")]
+        [ProjectAccess(ProjectRole.VIEWER)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> UpdateStatus(string taskId, [FromBody] EditTaskStatusRequest dto)
         {
-            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.VIEWER);
-            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
-
             var result = await _repository.UpdateStatus(taskId, dto.Status);
 
             if (result.Success)
             {
-                await _notifier.TaskStatusUpdated(accessResult.ProjectId!, taskId, result.Data!, dto.Status);
+                await _notifier.TaskStatusUpdated(CurrentProjectId!, taskId, result.Data!, dto.Status);
                 return Ok();
             }
             _logger.LogError("Failed to update status in {taskId}: {error}", taskId, result.Message ?? "unknown error");
@@ -119,20 +118,18 @@ namespace neco_board_ce.Controllers.API
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller does not have VIEWER role in the project and is not a workspace administrator.</response>
         [HttpPatch("priority", Name = "UpdateTaskPriority")]
+        [ProjectAccess(ProjectRole.VIEWER)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> UpdatePriority(string taskId, [FromBody] EditTaskPriorityRequest dto)
         {
-            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.VIEWER);
-            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
-
             var result = await _repository.UpdatePriority(taskId, dto.Priority);
 
             if (result.Success)
             {
-                await _notifier.TaskPriorityUpdated(accessResult.ProjectId!, taskId, result.Data!, dto.Priority);
+                await _notifier.TaskPriorityUpdated(CurrentProjectId!, taskId, result.Data!, dto.Priority);
                 return Ok();
             }
             _logger.LogError("Failed to update priority in {taskId}: {error}", taskId, result.Message ?? "unknown error");
@@ -160,15 +157,13 @@ namespace neco_board_ce.Controllers.API
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller is not a project member and is not a workspace administrator.</response>
         [HttpGet("user", Name = "GetAllUsersInTask")]
+        [ProjectAccess]
         [ProducesResponseType(typeof(List<TaskUser>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetUsers(string projectId, string taskId)
         {
-            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId);
-            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
-
             var users = await _taskUserRepository.GetByTaskId(taskId);
             if(!users.Success)
             {
@@ -220,15 +215,14 @@ namespace neco_board_ce.Controllers.API
         /// (2) the caller lacks USER role and is attempting to assign another user.
         /// </response>
         [HttpPost("user", Name = "AddUserInTask")]
+        [ProjectAccess(ProjectRole.VIEWER)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> AddUser(string taskId, [FromBody] AddUserInTaskRequest dto)
         {
-            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.VIEWER);
-            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
-            accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.USER);
+            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.USER);
             if (!accessResult.Result && dto.UserId is not null) return Forbid();
 
             string targetUserId = dto.UserId ?? UserId!;
@@ -285,15 +279,14 @@ namespace neco_board_ce.Controllers.API
         /// (2) the caller lacks USER role and is attempting to remove another user.
         /// </response>
         [HttpDelete("user", Name = "RemoveUserFromTask")]
+        [ProjectAccess(ProjectRole.VIEWER)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> RemoveUser(string taskId, [FromBody] AddUserInTaskRequest dto)
         {
-            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.VIEWER);
-            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
-            accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.USER);
+            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.USER);
             if (!accessResult.Result && dto.UserId is not null) return Forbid();
 
             string targetUserId = dto.UserId ?? UserId!;

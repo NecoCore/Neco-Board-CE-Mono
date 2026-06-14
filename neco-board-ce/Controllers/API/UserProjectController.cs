@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using neco_board_ce.Attributes.ProjectAccessAttribute;
 using neco_board_ce.Controllers.Hubs;
 using neco_board_ce.Data;
 using neco_board_ce.Interfaces;
@@ -34,18 +35,15 @@ namespace neco_board_ce.Controllers.API
         private readonly ILogger<UserProjectController> _logger;
         private readonly UserProjectRoleRepository _repository;
         private readonly IRealtimeNotifier _notifier;
-        private readonly UserAccessCheck _userAccess;
 
         public UserProjectController(
             ILogger<UserProjectController> logger,
             UserProjectRoleRepository repository,
-            IRealtimeNotifier notifier,
-            UserAccessCheck userAccess
+            IRealtimeNotifier notifier
         ) {
             _logger = logger;
             _repository = repository;
             _notifier = notifier;
-            _userAccess = userAccess;
         }
 
         /// <summary>
@@ -71,6 +69,7 @@ namespace neco_board_ce.Controllers.API
         /// <response code="403">The caller is not a project member and is not a workspace administrator.</response>
         /// <response code="500">Repository or infrastructure failure. Response body contains the error description.</response>
         [HttpGet(Name = "GetAllUsersInProject")]
+        [ProjectAccess]
         [ProducesResponseType(typeof(List<UserInfoProjectResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -78,9 +77,6 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetUsersProjectById(string projectId)
         {
-            var accessResult = await _userAccess.HasAccessToProject(UserId!, projectId);
-            if(!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
-
             var result = await _repository.GetByProjectId(projectId);
             if (!result.Success)
             {
@@ -119,15 +115,13 @@ namespace neco_board_ce.Controllers.API
         /// <response code="403">The caller does not have MODERATOR role and is not a workspace administrator.</response>
         /// <response code="500">Failed to add the user to the project. Response body contains the error description.</response>
         [HttpPost(Name = "AddUserInProject")]
+        [ProjectAccess(ProjectRole.USER)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> AddUserInProject([FromBody] UserProjectRequest dto, string projectId)
         {
-            var accessResult = await _userAccess.HasAccessToProject(UserId!, projectId, ProjectRole.USER);
-            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
-
             var result = await _repository.AddToProject(dto.Id, projectId, dto.Role);
             if (result.Success)
             {
@@ -173,6 +167,7 @@ namespace neco_board_ce.Controllers.API
         /// <response code="500">Repository or infrastructure failure. Response body contains the error description.</response>
         [HttpPatch("{userId}", Name = "UpdateUserInProject")]
         [Authorize]
+        [ProjectAccess(ProjectRole.USER)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -180,9 +175,6 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UpdateUserInProject(string projectId, string userId, [FromBody] EditUserInProjectRequest dto)
         {
-            var accessResult = await _userAccess.HasAccessToProject(UserId!, projectId, ProjectRole.USER);
-            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
-
             var result = await _repository.GetByUserAndProject(userId, projectId);
             if(!result.Success)
             {
@@ -246,6 +238,7 @@ namespace neco_board_ce.Controllers.API
         /// <response code="500">Repository or infrastructure failure. Response body contains the error description.</response>
         [HttpDelete("{userId}", Name = "RemoveUserFromProject")]
         [Authorize]
+        [ProjectAccess(ProjectRole.USER)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -253,9 +246,6 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteUserInProject(string projectId, string userId)
         {
-            var accessResult = await _userAccess.HasAccessToProject(UserId!, projectId, ProjectRole.USER);
-            if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
-
             var result = await _repository.GetByUserAndProject(userId, projectId);
             if (!result.Success)
             {

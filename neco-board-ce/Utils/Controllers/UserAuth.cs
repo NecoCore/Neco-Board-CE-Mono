@@ -9,6 +9,9 @@ namespace neco_board_ce.Utils.Controllers
         protected string? UserId =>
             User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+        protected string? CurrentProjectId =>
+            HttpContext.Items["ProjectId"]?.ToString();
+
         protected bool IsWorkspaceAdmin() => 
             User.FindFirstValue(ClaimTypes.Role) == WorkspaceRoles.ADMIN.ToString() || 
             User.FindFirstValue(ClaimTypes.Role) == WorkspaceRoles.OWNER.ToString();
