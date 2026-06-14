@@ -172,5 +172,39 @@ namespace neco_board_ce.Controllers.Hubs
         public Task UserDisconnected(Guid userId) => Task.CompletedTask;
 
         #endregion
+
+        #region Client-to-Server (Hub methods)
+
+        /// <remarks>
+        /// These methods are called by the client on the hub. Saunter models them as 
+        /// <c>subscribe</c> operations (the server subscribes to these messages).
+        /// </remarks>
+
+        [Channel("JoinProject")]
+        [SubscribeOperation(typeof(Guid), Summary = "Join project group",
+            Description = "Adds the connection to the 'project:{id}' group. Requires project membership.")]
+        public Task JoinProject(Guid projectId) => Task.CompletedTask;
+
+        [Channel("LeaveProject")]
+        [SubscribeOperation(typeof(Guid), Summary = "Leave project group",
+            Description = "Removes the connection from the 'project:{id}' group.")]
+        public Task LeaveProject(Guid projectId) => Task.CompletedTask;
+
+        [Channel("JoinTask")]
+        [SubscribeOperation(typeof(Guid), Summary = "Join task group",
+            Description = "Adds the connection to the 'task:{id}' group. Requires project membership.")]
+        public Task JoinTask(Guid taskId) => Task.CompletedTask;
+
+        [Channel("LeaveTask")]
+        [SubscribeOperation(typeof(Guid), Summary = "Leave task group",
+            Description = "Removes the connection from the 'task:{id}' group.")]
+        public Task LeaveTask(Guid taskId) => Task.CompletedTask;
+
+        [Channel("GetOnlineUsers")]
+        [SubscribeOperation(typeof(EmptyPayload), Summary = "Get online users",
+            Description = "Returns a list of currently online user IDs.")]
+        public Task<IEnumerable<string>> GetOnlineUsers() => Task.FromResult(Enumerable.Empty<string>());
+
+        #endregion
     }
 }

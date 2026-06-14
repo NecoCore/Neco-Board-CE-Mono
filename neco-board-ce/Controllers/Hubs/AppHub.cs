@@ -7,6 +7,13 @@ using System.Collections.Concurrent;
 
 namespace neco_board_ce.Controllers.Hubs
 {
+    /// <summary>
+    /// SignalR Hub for handling real-time communications within the workspace.
+    /// </summary>
+    /// <remarks>
+    /// Manages project-specific and task-specific groups, connection lifecycle, 
+    /// and user online/offline status tracking. All methods require authentication.
+    /// </remarks>
     [Authorize]
     public class AppHub : Hub<IAppClient>
     {
@@ -20,6 +27,15 @@ namespace neco_board_ce.Controllers.Hubs
             _userAccess = userAccess;
         }
 
+        /// <summary>
+        /// Adds the authenticated user's connection to a SignalR group for a specific project.
+        /// </summary>
+        /// <remarks>
+        /// Verifies that the user has access to the project before adding them to the group.
+        /// Throws a <see cref="HubException"/> if access is denied.
+        /// </remarks>
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <exception cref="HubException">Thrown when the user lacks access to the project.</exception>
         public async Task JoinProject(Guid projectId)
         {
             var userIdStr = Context.UserIdentifier;
@@ -29,9 +45,22 @@ namespace neco_board_ce.Controllers.Hubs
             await Groups.AddToGroupAsync(Context.ConnectionId, HubGroups.Project(projectId.ToString()));
         }
 
+        /// <summary>
+        /// Removes the authenticated user's connection from a SignalR group for a specific project.
+        /// </summary>
+        /// <param name="projectId">The unique identifier of the project.</param>
         public Task LeaveProject(Guid projectId)
             => Groups.RemoveFromGroupAsync(Context.ConnectionId, HubGroups.Project(projectId.ToString()));
 
+        /// <summary>
+        /// Adds the authenticated user's connection to a SignalR group for a specific task.
+        /// </summary>
+        /// <remarks>
+        /// Verifies that the user has access to the task before adding them to the group.
+        /// Throws a <see cref="HubException"/> if access is denied.
+        /// </remarks>
+        /// <param name="taskId">The unique identifier of the task.</param>
+        /// <exception cref="HubException">Thrown when the user lacks access to the task.</exception>
         public async Task JoinTask(Guid taskId)
         {
             var userIdStr = Context.UserIdentifier;
@@ -41,9 +70,25 @@ namespace neco_board_ce.Controllers.Hubs
             await Groups.AddToGroupAsync(Context.ConnectionId, HubGroups.Task(taskId.ToString()));
         }
 
+        /// <summary>
+        /// Removes the authenticated user's connection from a SignalR group for a specific task.
+        /// </summary>
+        /// <param name="taskId">The unique identifier of the task.</param>
         public Task LeaveTask(Guid taskId)
             => Groups.RemoveFromGroupAsync(Context.ConnectionId, HubGroups.Task(taskId.ToString()));
 
+        /// <summary>
+        /// Handles the connection event for a SignalR client.
+        /// </summary>
+        /// <remarks>
+        /// Performs the following actions:
+        /// <list type="bullet">
+        ///   <item><description>Adds the connection to the global 'All' group.</description></item>
+        ///   <item><description>Adds admins/owners to the 'Admins' group.</description></item>
+        ///   <item><description>Tracks the user's connection ID for online status.</description></item>
+        ///   <item><description>Broadcasts <c>UserConnected</c> to others if this is the user's first connection.</description></item>
+        /// </list>
+        /// </remarks>
         public override async Task OnConnectedAsync()
         {
             _logger.LogInformation("User connecting...");
@@ -93,6 +138,14 @@ namespace neco_board_ce.Controllers.Hubs
             await base.OnConnectedAsync();
         }
 
+        /// <summary>
+        /// Handles the disconnection event for a SignalR client.
+        /// </summary>
+        /// <remarks>
+        /// Removes the connection ID from tracking. If no more connections exist for the user,
+        /// broadcasts <c>UserDisconnected</c> to all clients.
+        /// </remarks>
+        /// <param name="exception">Optional exception that occurred during disconnection.</param>
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
             _logger.LogInformation("User disconnecting...");
@@ -130,6 +183,10 @@ namespace neco_board_ce.Controllers.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
+        /// <summary>
+        /// Retrieves the list of currently online user IDs.
+        /// </summary>
+        /// <returns>An enumerable collection of user ID strings.</returns>
         public Task<IEnumerable<string>> GetOnlineUsers()
         {
             return Task.FromResult(_onlineUsers.Keys.AsEnumerable());
