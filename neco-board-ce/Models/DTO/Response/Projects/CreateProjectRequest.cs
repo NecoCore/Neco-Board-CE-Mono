@@ -2,6 +2,6 @@
 {
     public class CreateProjectRequest
     {
-        public string ProjectId { get; set; } = string.Empty;
+        public Guid ProjectId { get; set; }
     }
 }
