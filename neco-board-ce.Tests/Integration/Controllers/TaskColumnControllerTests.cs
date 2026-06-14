@@ -47,10 +47,18 @@ namespace neco_board_ce.Tests.Integration.Controllers
             var taskT1 = new ColumnTask { Id = Guid.NewGuid(), Name = "Task T1", ColumnId = columnA.Id, OwnerId = userA.Id };
 
             // 3. Create Project B and Column B1 (Target for kidnapping)
-            var projectB = new Project { Id = Guid.NewGuid(), Name = "Project B", OwnerId = Guid.NewGuid() };
+            var ownerB = new Account
+            {
+                Id = Guid.NewGuid(),
+                Name = "Project B Owner",
+                Login = "user_b_" + Guid.NewGuid(),
+                Password = "hashed_password",
+                Role = WorkspaceRoles.USER
+            };
+            var projectB = new Project { Id = Guid.NewGuid(), Name = "Project B", OwnerId = ownerB.Id };
             var columnB = new Column { Id = Guid.NewGuid(), Name = "Column B", ProjectId = projectB.Id, Queue = 1 };
 
-            db.Accounts.Add(userA);
+            db.Accounts.AddRange(userA, ownerB);
             db.Projects.AddRange(projectA, projectB);
             db.Columns.AddRange(columnA, columnB);
             db.ColumnTasks.Add(taskT1);
@@ -73,7 +81,7 @@ namespace neco_board_ce.Tests.Integration.Controllers
             // Assert
             response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest, "Tasks cannot be moved to columns in different projects");
             var error = await response.Content.ReadFromJsonAsync<ErrorMessageResponse>();
-            error!.Message.Should().Be("Column not found");
+            error!.Message.Should().Be("Column not found.");
 
             // 6. Verify task remained in the original column
             using var verifyScope = _factory.Services.CreateScope();
