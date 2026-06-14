@@ -1,4 +1,4 @@
-﻿using neco_board_ce.Models.Enums;
+using neco_board_ce.Models.Enums;
 using neco_board_ce.Models.Results;
 using neco_board_ce.Repositories.Tables;
 
@@ -13,16 +13,29 @@ namespace neco_board_ce.Utils.Check
         private readonly ColumnsRepository _columnsRepository;
         private readonly ColumnTaskRepository _taskRepository;
         private readonly UserProjectRoleRepository _userProjectRoleRepository;
+        private readonly AccountRepository _accountRepository;
 
-        public UserAccessCheck(ColumnsRepository columnsRepository, ColumnTaskRepository taskRepository, UserProjectRoleRepository userProjectRoleRepository)
+        public UserAccessCheck(
+            ColumnsRepository columnsRepository, 
+            ColumnTaskRepository taskRepository, 
+            UserProjectRoleRepository userProjectRoleRepository,
+            AccountRepository accountRepository)
         {
             _columnsRepository = columnsRepository;
             _taskRepository = taskRepository;
             _userProjectRoleRepository = userProjectRoleRepository;
+            _accountRepository = accountRepository;
+        }
+
+        private async Task<bool> IsGlobalAdmin(Guid userId)
+        {
+            var user = await _accountRepository.GetById(userId);
+            if (!user.Success || user.Data is null) return false;
+            return user.Data.Role == WorkspaceRoles.ADMIN || user.Data.Role == WorkspaceRoles.OWNER;
         }
 
         /// <summary>
-        /// Checks if a user has basic access to a column (is a member of the parent project).
+        /// Checks if a user has basic access to a column (is a member of the parent project or global admin).
         /// </summary>
         /// <param name="userId">The ID of the user to check.</param>
         /// <param name="columnId">The ID of the column.</param>
@@ -37,6 +50,8 @@ namespace neco_board_ce.Utils.Check
             if(column.Data is null) return new CheckResult { Result = false, Message = "Column not found" };
 
             var projectId = column.Data.ProjectId;
+
+            if (await IsGlobalAdmin(userId)) return new CheckResult { Result = true, ProjectId = projectId };
 
             var userInProject = await _userProjectRoleRepository.GetByUserAndProject(userId, projectId);
             if (!userInProject.Success) return new CheckResult { Result = false, Message = userInProject.Message, ProjectId = projectId };
@@ -63,6 +78,8 @@ namespace neco_board_ce.Utils.Check
 
             var projectId = column.Data.ProjectId;
 
+            if (await IsGlobalAdmin(userId)) return new CheckResult { Result = true, ProjectId = projectId };
+
             var userInProject = await _userProjectRoleRepository.GetByUserAndProject(userId, projectId);
             if (!userInProject.Success) return new CheckResult { Result = false, Message = userInProject.Message, ProjectId = projectId };
             if (userInProject.Data is null) return new CheckResult { Result = false, Message = "User doesn't have access in project", ProjectId = projectId };
@@ -74,7 +91,7 @@ namespace neco_board_ce.Utils.Check
         }
 
         /// <summary>
-        /// Checks if a user has basic access to a task (is a member of the parent project).
+        /// Checks if a user has basic access to a task (is a member of the parent project or global admin).
         /// </summary>
         /// <param name="userId">The ID of the user to check.</param>
         /// <param name="taskId">The ID of the task.</param>
@@ -86,6 +103,8 @@ namespace neco_board_ce.Utils.Check
             if (projectIdResult.Data is null) return new CheckResult { Result = false, Message = "Task not found" };
 
             var projectId = projectIdResult.Data.Value;
+
+            if (await IsGlobalAdmin(userId)) return new CheckResult { Result = true, ProjectId = projectId };
 
             var userInProject = await _userProjectRoleRepository.GetByUserAndProject(userId, projectId);
             if (!userInProject.Success) return new CheckResult { Result = false, Message = userInProject.Message, ProjectId = projectId };
@@ -109,6 +128,8 @@ namespace neco_board_ce.Utils.Check
 
             var projectId = projectIdResult.Data.Value;
 
+            if (await IsGlobalAdmin(userId)) return new CheckResult { Result = true, ProjectId = projectId };
+
             var userInProject = await _userProjectRoleRepository.GetByUserAndProject(userId, projectId);
             if (!userInProject.Success) return new CheckResult { Result = false, Message = userInProject.Message, ProjectId = projectId };
             if (userInProject.Data is null) return new CheckResult { Result = false, Message = "User doesn't have access in project", ProjectId = projectId };
@@ -118,13 +139,15 @@ namespace neco_board_ce.Utils.Check
         }
 
         /// <summary>
-        /// Checks if a user has basic membership in a project.
+        /// Checks if a user has basic membership in a project (or is global admin).
         /// </summary>
         /// <param name="userId">The ID of the user to check.</param>
         /// <param name="projectId">The ID of the project.</param>
         /// <returns>A <see cref="CheckResult"/> containing the result and the project ID.</returns>
         public async Task<CheckResult> HasAccessToProject(Guid userId, Guid projectId)
         {
+            if (await IsGlobalAdmin(userId)) return new CheckResult { Result = true, ProjectId = projectId };
+
             var userInProject = await _userProjectRoleRepository.GetByUserAndProject(userId, projectId);
             if(!userInProject.Success) return new CheckResult { Result = false, Message = userInProject.Message, ProjectId = projectId };
             if (userInProject.Data is null) return new CheckResult { Result = false, Message = "User doesn't have access in project", ProjectId = projectId };
@@ -141,6 +164,8 @@ namespace neco_board_ce.Utils.Check
         /// <returns>A <see cref="CheckResult"/> containing the result and the project ID.</returns>
         public async Task<CheckResult> HasAccessToProject(Guid userId, Guid projectId, ProjectRole role)
         {
+            if (await IsGlobalAdmin(userId)) return new CheckResult { Result = true, ProjectId = projectId };
+
             var userInProject = await _userProjectRoleRepository.GetByUserAndProject(userId, projectId);
             if (!userInProject.Success) return new CheckResult { Result = false, Message = userInProject.Message, ProjectId = projectId };
             if (userInProject.Data is null) return new CheckResult { Result = false, Message = "User doesn't have access in project", ProjectId = projectId };

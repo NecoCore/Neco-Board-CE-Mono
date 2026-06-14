@@ -313,3 +313,5 @@ app.MapControllers();
 app.MapHub<AppHub>(Constants.SignalR.HubPath);
 
 app.Run();
+
+public partial class Program { }
