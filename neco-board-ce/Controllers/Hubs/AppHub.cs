@@ -24,8 +24,8 @@ namespace neco_board_ce.Controllers.Hubs
         {
             var userId = Context.UserIdentifier;
             if (userId is null) return;
-            var chek = await _userAccess.HasAccessToProject(userId, projectId);
-            if (!chek.Result) throw new HubException("Access denied");
+            var check = await _userAccess.HasAccessToProject(userId, projectId);
+            if (!check.Result) throw new HubException("Access denied");
             await Groups.AddToGroupAsync(Context.ConnectionId, HubGroups.Project(projectId));
         }
 
@@ -36,8 +36,8 @@ namespace neco_board_ce.Controllers.Hubs
         {
             var userId = Context.UserIdentifier;
             if (userId is null) return;
-            var chek = await _userAccess.HasAccessToTask(userId, taskId);
-            if (!chek.Result) throw new HubException("Access denied");
+            var check = await _userAccess.HasAccessToTask(userId, taskId);
+            if (!check.Result) throw new HubException("Access denied");
             await Groups.AddToGroupAsync(Context.ConnectionId, HubGroups.Task(taskId));
         }
 
@@ -46,7 +46,7 @@ namespace neco_board_ce.Controllers.Hubs
 
         public override async Task OnConnectedAsync()
         {
-            _logger.LogInformation("User conecting...");
+            _logger.LogInformation("User connecting...");
             var userId = Context.UserIdentifier;
 
             if(userId != null)
@@ -75,7 +75,7 @@ namespace neco_board_ce.Controllers.Hubs
                         {
                             connections.Add(Context.ConnectionId);
                         }
-                        _logger.LogInformation("Updetaed online users");
+                        _logger.LogInformation("Updated online users");
                         return connections;
                     }
                 );
@@ -87,7 +87,7 @@ namespace neco_board_ce.Controllers.Hubs
                 }
             } else
             {
-                _logger.LogWarning("Failed connection. User not autorized");
+                _logger.LogWarning("Failed connection. User not authorized");
             }
 
             await base.OnConnectedAsync();
@@ -95,7 +95,7 @@ namespace neco_board_ce.Controllers.Hubs
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            _logger.LogInformation("User disconecting...");
+            _logger.LogInformation("User disconnecting...");
             var userId = Context.UserIdentifier;
 
             if (userId != null)
@@ -117,14 +117,14 @@ namespace neco_board_ce.Controllers.Hubs
 
                     if (isUserOffline)
                     {
-                        _logger.LogInformation("Notificate user {userId} now ofline", userId);
+                        _logger.LogInformation("Notificate user {userId} now offline", userId);
                         _onlineUsers.TryRemove(userId, out _);
                         await Clients.All.UserDisconnected(userId);
                     }
                 }
             } else
             {
-                _logger.LogWarning("Failed disconnectiond. User not autorized");
+                _logger.LogWarning("Failed disconnection. User not authorized");
             }
 
             await base.OnDisconnectedAsync(exception);

@@ -74,16 +74,16 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAll()
         {
-            var resut = await _repository.GetAll();
-            if (!resut.Success)
+            var result = await _repository.GetAll();
+            if (!result.Success)
             {
-                _logger.LogError("Failed to retrieve all users: {Error}", resut.Message ?? "unknown error");
+                _logger.LogError("Failed to retrieve all users: {Error}", result.Message ?? "unknown error");
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     new ErrorMessageResponse { Message = "Unable to retrieve the user list. Please try again later." });
             }
-            if (resut.Data == null || resut.Data.Count == 0) return NoContent();
+            if (result.Data == null || result.Data.Count == 0) return NoContent();
 
-            var data = resut.Data.Select(x => new UserInfoResponse(x)).ToList();
+            var data = result.Data.Select(x => new UserInfoResponse(x)).ToList();
             return Ok(data);
         }
 
