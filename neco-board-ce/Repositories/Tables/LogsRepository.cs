@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using neco_board_ce.Data;
 using neco_board_ce.Models.Entity;
 using neco_board_ce.Models.Enums;
+using neco_board_ce.Models.Results;
 
 namespace neco_board_ce.Repositories.Tables
 {
@@ -16,50 +17,93 @@ namespace neco_board_ce.Repositories.Tables
             _logger = logger;
         }
 
-        public async Task<List<Logs>> GetAll()
+        public async Task<RepositoryResult<List<Logs>>> GetPage(int count, int page)
         {
-            _logger.LogDebug("Fetching all logs from the database.");
-            return await _db.Logs
-                .Include(l => l.User)
-                .OrderByDescending(l => l.CreatedAt)
-                .ToListAsync();
+            try
+            {
+                var logs = await _db.Logs
+                    .Include(l => l.User)
+                    .Include(l => l.Project)
+                    .OrderByDescending(l => l.CreatedAt)
+                    .Skip((page - 1) * count)
+                    .Take(count)
+                    .ToListAsync();
+
+                return new RepositoryResult<List<Logs>> { Success = true, Data = logs };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching paginated logs.");
+                return new RepositoryResult<List<Logs>> { Success = false, Message = "Database error." };
+            }
         }
 
-        public async Task<List<Logs>> GetByProjectId(Guid projectId)
+        public async Task<RepositoryResult<List<Logs>>> GetByProjectId(Guid projectId, int count, int page)
         {
-            _logger.LogDebug("Fetching logs for project ID: {ProjectId} from the database.", projectId);
-            return await _db.Logs
-                .Include(l => l.User)
-                .Where(l => l.ProjectId == projectId)
-                .OrderByDescending(l => l.CreatedAt)
-                .ToListAsync();
+            try
+            {
+                var logs = await _db.Logs
+                    .Include(l => l.User)
+                    .Include(l => l.Project)
+                    .Where(l => l.ProjectId == projectId)
+                    .OrderByDescending(l => l.CreatedAt)
+                    .Skip((page - 1) * count)
+                    .Take(count)
+                    .ToListAsync();
+
+                return new RepositoryResult<List<Logs>> { Success = true, Data = logs };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching paginated logs for project {ProjectId}.", projectId);
+                return new RepositoryResult<List<Logs>> { Success = false, Message = "Database error." };
+            }
         }
 
-        public async Task<List<Logs>> GetByUserId(Guid userId)
+        public async Task<RepositoryResult<List<Logs>>> GetByUserId(Guid userId, int count, int page)
         {
-            _logger.LogDebug("Fetching logs for user ID: {UserId} from the database.", userId);
-            return await _db.Logs
-                .Where(l => l.UserId == userId)
-                .OrderByDescending(l => l.CreatedAt)
-                .ToListAsync();
+            try
+            {
+                var logs = await _db.Logs
+                    .Include(l => l.User)
+                    .Include(l => l.Project)
+                    .Where(l => l.UserId == userId)
+                    .OrderByDescending(l => l.CreatedAt)
+                    .Skip((page - 1) * count)
+                    .Take(count)
+                    .ToListAsync();
+
+                return new RepositoryResult<List<Logs>> { Success = true, Data = logs };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching paginated logs for user {UserId}.", userId);
+                return new RepositoryResult<List<Logs>> { Success = false, Message = "Database error." };
+            }
         }
 
         public async Task<bool> Create(string name, Guid userId, LogType logType, LogFor logFor, string? description = null, Guid? newUserId = null, Guid? projectId = null)
         {
-            _logger.LogDebug("Creating log for user ID: {UserId} in project ID: {ProjectId}.", userId, projectId);
-
-            await _db.Logs.AddAsync(new Logs
+            try
             {
-                Name = name,
-                UserId = userId,
-                ProjectId = projectId,
-                NewUserId = newUserId,
-                LogType = logType,
-                LogFor = logFor,
-                Description = description
-            });
+                await _db.Logs.AddAsync(new Logs
+                {
+                    Name = name,
+                    UserId = userId,
+                    ProjectId = projectId,
+                    NewUserId = newUserId,
+                    LogType = logType,
+                    LogFor = logFor,
+                    Description = description
+                });
 
-            return await _db.SaveChangesAsync() > 0;
+                return await _db.SaveChangesAsync() > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating log entry.");
+                return false;
+            }
         }
     }
 }
