@@ -50,7 +50,7 @@ namespace neco_board_ce.Interfaces
         /// project group <c>project:{id}</c> and the <c>all</c> group.
         /// </remarks>
         /// <param name="id">Id of the deleted project.</param>
-        Task ProjectDeleted(string id);
+        Task ProjectDeleted(Guid id);
 
         #endregion
 
@@ -59,7 +59,7 @@ namespace neco_board_ce.Interfaces
         /// <summary>A user was added to a project.</summary>
         /// <remarks>Source: <see cref="UserProjectController"/> (<c>POST /api/project/{projectId}/users</c>) → project group.</remarks>
         /// <param name="userId">Id of the added user.</param>
-        Task UserAddedToProject(string userId);
+        Task UserAddedToProject(Guid userId);
 
         /// <summary>A user's role in a project changed.</summary>
         /// <remarks>
@@ -75,7 +75,7 @@ namespace neco_board_ce.Interfaces
         /// → project group and the affected user.
         /// </remarks>
         /// <param name="userId">Id of the removed user.</param>
-        Task UserRemovedFromProject(string userId);
+        Task UserRemovedFromProject(Guid userId);
 
         #endregion
 
@@ -97,7 +97,7 @@ namespace neco_board_ce.Interfaces
         /// <summary>A column was deleted.</summary>
         /// <remarks>Source: <see cref="ColumnsProjectController"/> (<c>DELETE /api/column/{columnId}</c>).</remarks>
         /// <param name="columnId">Id of the deleted column.</param>
-        Task ColumnDeleted(string columnId);
+        Task ColumnDeleted(Guid columnId);
 
         #endregion
 
@@ -106,12 +106,12 @@ namespace neco_board_ce.Interfaces
         /// <summary>A task was created.</summary>
         /// <remarks>Source: <see cref="TaskColumnController"/> (<c>POST /api/tasks</c>).</remarks>
         /// <param name="columnId">Id of the column the task was created in.</param>
-        Task TaskCreated(string columnId);
+        Task TaskCreated(Guid columnId);
 
         /// <summary>A task was updated (content fields).</summary>
         /// <remarks>Source: <see cref="TaskColumnController"/> (<c>PUT /api/tasks/{taskId}</c>).</remarks>
         /// <param name="id">Id of the updated task.</param>
-        Task TaskUpdated(string id);
+        Task TaskUpdated(Guid id);
 
         /// <summary>A task was moved between columns.</summary>
         /// <remarks>Source: <see cref="TaskColumnController"/> (<c>PATCH /api/tasks/{taskId}/column</c>) → project group.</remarks>
@@ -153,7 +153,7 @@ namespace neco_board_ce.Interfaces
         /// <summary>A user was removed from a task.</summary>
         /// <remarks>Source: <see cref="TaskInfoController"/> (<c>DELETE /api/tasks/{taskId}/user</c>) → task group.</remarks>
         /// <param name="userId">Id of the removed user.</param>
-        Task TaskUserRemoved(string userId);
+        Task TaskUserRemoved(Guid userId);
 
         #endregion
 
@@ -166,7 +166,7 @@ namespace neco_board_ce.Interfaces
         /// <summary>A file attachment was deleted from a task.</summary>
         /// <remarks>Source: <c>DELETE files/task/{taskId}/attachments/{attachmentId}</c> → task group.</remarks>
         /// <param name="attachmentId">Id of the deleted attachment.</param>
-        Task TaskAttachmentDeleted(string attachmentId);
+        Task TaskAttachmentDeleted(Guid attachmentId);
 
         #endregion
 
@@ -179,7 +179,7 @@ namespace neco_board_ce.Interfaces
         /// <summary>An image was deleted from a task.</summary>
         /// <remarks>Source: <c>DELETE files/task/{taskId}/images/{imageId}</c> → task group.</remarks>
         /// <param name="imageId">Id of the deleted image.</param>
-        Task TaskImageDeleted(string imageId);
+        Task TaskImageDeleted(Guid imageId);
 
         #endregion
 
@@ -188,12 +188,12 @@ namespace neco_board_ce.Interfaces
         /// <summary>A user came online.</summary>
         /// <remarks>Source: <see cref="Controllers.Hubs.AppHub.OnConnectedAsync"/> → <c>Clients.Others</c>.</remarks>
         /// <param name="userId">Id of the user who connected.</param>
-        Task UserConnected(string userId);
+        Task UserConnected(Guid userId);
 
         /// <summary>A user went offline.</summary>
         /// <remarks>Source: <see cref="Controllers.Hubs.AppHub.OnDisconnectedAsync"/> → <c>Clients.All</c>.</remarks>
         /// <param name="userId">Id of the user who disconnected.</param>
-        Task UserDisconnected(string userId);
+        Task UserDisconnected(Guid userId);
 
         #endregion
     }
