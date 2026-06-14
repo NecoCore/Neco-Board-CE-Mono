@@ -10,12 +10,12 @@ namespace neco_board_ce.Models.Entity
     {
         [Key]
         [Column("id")]
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-        
+        public Guid Id { get; set; } = Guid.NewGuid();
+
         [Required]
         [MaxLength(50)]
         [Column("name")]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         
         [MaxLength(500)]
         [Column("avatar")]
@@ -24,20 +24,23 @@ namespace neco_board_ce.Models.Entity
         [MaxLength(50)]
         [Column("login")]
         [JsonIgnore]
-        public string Login { get; set; }
+        public string Login { get; set; } = string.Empty;
 
         [MaxLength(500)]
         [Column("password")]
         [JsonIgnore]
-        public string Password { get; set; }
-        
+        public string Password { get; set; } = string.Empty;
+
         [Column("role")]
         public WorkspaceRoles Role { get; set; } = WorkspaceRoles.USER;
         
         [Column("created_at")]
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        
+        [Column("last_login_at")]
+        public DateTime? LastLoginAt { get; set; }
+
+
         [JsonIgnore]
         public List<Logs> Logs { get; set; } = [];
         [JsonIgnore]
