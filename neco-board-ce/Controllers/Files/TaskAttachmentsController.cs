@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
+using neco_board_ce.Data;
 using neco_board_ce.Interfaces;
 using neco_board_ce.Models.DTO.Response.Messages;
 using neco_board_ce.Models.Entity;
+using neco_board_ce.Models.Enums;
 using neco_board_ce.Repositories.Tables;
+using neco_board_ce.Services.Logs;
 using neco_board_ce.Utils.Check;
 using neco_board_ce.Utils.Controllers;
 
@@ -29,6 +32,7 @@ namespace neco_board_ce.Controllers.Files
         private readonly ILogger<TaskAttachmentsController> _logger;
         private readonly TaskAttachmentsRepository _repository;
         private readonly UserAccessCheck _userAccess;
+        private readonly AuditService _auditService;
         private readonly IRealtimeNotifier _realtime;
         private readonly long _maxFileSize;
         private readonly FileExtensionContentTypeProvider _mimeProvider;
@@ -38,6 +42,7 @@ namespace neco_board_ce.Controllers.Files
             ILogger<TaskAttachmentsController> logger,
             TaskAttachmentsRepository repository,
             UserAccessCheck userAccess,
+            AuditService auditService,
             IRealtimeNotifier realtime,
             IConfiguration config,
             FileExtensionContentTypeProvider mimeProvider)
@@ -46,6 +51,7 @@ namespace neco_board_ce.Controllers.Files
             _logger = logger;
             _repository = repository;
             _userAccess = userAccess;
+            _auditService = auditService;
             _realtime = realtime;
             _maxFileSize = config.GetValue<long>("Storage:MaxFileSizeBytes", 10 * 1024 * 1024);
             _mimeProvider = mimeProvider;
@@ -132,6 +138,7 @@ namespace neco_board_ce.Controllers.Files
                     new ErrorMessageResponse { Message = "Failed to save attachment." });
             }
 
+            await _auditService.FileLog(access.ProjectId!.Value, UserId.Value, LogType.CREATED, "Task attachment uploaded", $"TaskId: {taskId}, Name: {file.FileName}");
             await _realtime.TaskAttachmentUploaded(taskId);
             return CreatedAtAction(nameof(GetAttachments), new { taskId }, entity);
         }
@@ -202,6 +209,7 @@ namespace neco_board_ce.Controllers.Files
             }
 
             await _storage.DeleteAsync(filePath);
+            await _auditService.FileLog(access.ProjectId!.Value, UserId.Value, LogType.DELETED, "Task attachment deleted", $"TaskId: {taskId}, AttachmentId: {attachmentId}");
             await _realtime.TaskAttachmentDeleted(taskId, attachmentId);
             return NoContent();
         }
