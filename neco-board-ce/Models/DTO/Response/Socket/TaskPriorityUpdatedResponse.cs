@@ -7,8 +7,8 @@ namespace neco_board_ce.Models.DTO.Response.Socket
     /// </summary>
     public class TaskPriorityUpdatedResponse
     {
-        public string TaskId { get; set; } = string.Empty;
-        public string ColumnId { get; set; } = string.Empty;
+        public Guid TaskId { get; set; }
+        public Guid ColumnId { get; set; }
         public TaskPriority Priority { get; set; }
     }
 }
