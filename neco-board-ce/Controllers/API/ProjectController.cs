@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using neco_board_ce.Interfaces;
-using neco_board_ce.Models.DTO.Request;
+using neco_board_ce.Models.DTO.Request.Projects;
 using neco_board_ce.Models.DTO.Response.Messages;
 using neco_board_ce.Models.DTO.Response.Projects;
 using neco_board_ce.Models.Entity;

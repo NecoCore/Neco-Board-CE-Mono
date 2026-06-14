@@ -1,17 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace neco_board_ce.Models.DTO.Request
+namespace neco_board_ce.Models.DTO.Request.Auth
 {
-    public class RegisterRequest
+    public class EditPasswordRequest
     {
         [Required]
-        [StringLength(100, MinimumLength = 3, ErrorMessage = "Name must be between 3 and 100 characters.")]
-        public string Name { get; set; } = string.Empty;
-
-        [Required]
-        [RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "Login can only contain letters, numbers, and underscores.")]
-        [StringLength(50, MinimumLength = 3, ErrorMessage = "Login must be between 3 and 50 characters.")]
-        public string Login { get; set; } = string.Empty;
+        public string OldPassword { get; set; } = string.Empty;
 
         [Required]
         [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be between 6 and 100 characters.")]

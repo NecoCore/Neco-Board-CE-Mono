@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using neco_board_ce.Data;
 using neco_board_ce.Interfaces;
-using neco_board_ce.Models.DTO.Request;
 using neco_board_ce.Models.DTO.Request.Tasks;
 using neco_board_ce.Models.DTO.Response.Messages;
 using neco_board_ce.Models.DTO.Response.Task;

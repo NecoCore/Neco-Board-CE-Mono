@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using neco_board_ce.Models.DTO.Request;
+using neco_board_ce.Models.DTO.Request.Auth;
 using neco_board_ce.Models.DTO.Response.Auth;
 using neco_board_ce.Models.DTO.Response.Messages;
 using neco_board_ce.Services.Authentication;
