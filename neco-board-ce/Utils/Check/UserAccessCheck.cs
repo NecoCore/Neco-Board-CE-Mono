@@ -27,7 +27,7 @@ namespace neco_board_ce.Utils.Check
         /// <param name="userId">The ID of the user to check.</param>
         /// <param name="columnId">The ID of the column.</param>
         /// <returns>A <see cref="CheckResult"/> containing the result and the project ID if found.</returns>
-        public async Task<CheckResult> HasAccessToColumn(string userId, string columnId)
+        public async Task<CheckResult> HasAccessToColumn(Guid userId, Guid columnId)
         {
             var column = await _columnsRepository.GetById(columnId);
             if(!column.Success)
@@ -52,7 +52,7 @@ namespace neco_board_ce.Utils.Check
         /// <param name="columnId">The ID of the column.</param>
         /// <param name="role">The minimum required role (e.g., MODERATOR).</param>
         /// <returns>A <see cref="CheckResult"/> with <c>Result = true</c> only if the user has the required role or higher.</returns>
-        public async Task<CheckResult> HasAccessToColumn(string userId, string columnId, ProjectRole role)
+        public async Task<CheckResult> HasAccessToColumn(Guid userId, Guid columnId, ProjectRole role)
         {
             var column = await _columnsRepository.GetById(columnId);
             if (!column.Success)
@@ -79,13 +79,13 @@ namespace neco_board_ce.Utils.Check
         /// <param name="userId">The ID of the user to check.</param>
         /// <param name="taskId">The ID of the task.</param>
         /// <returns>A <see cref="CheckResult"/> containing the result and the project ID if found.</returns>
-        public async Task<CheckResult> HasAccessToTask(string userId, string taskId)
+        public async Task<CheckResult> HasAccessToTask(Guid userId, Guid taskId)
         {
             var projectIdResult = await _taskRepository.GetProjectById(taskId);
             if(!projectIdResult.Success) return new CheckResult { Result = false, Message = projectIdResult.Message };
             if (projectIdResult.Data is null) return new CheckResult { Result = false, Message = "Task not found" };
 
-            var projectId = projectIdResult.Data;
+            var projectId = projectIdResult.Data.Value;
 
             var userInProject = await _userProjectRoleRepository.GetByUserAndProject(userId, projectId);
             if (!userInProject.Success) return new CheckResult { Result = false, Message = userInProject.Message, ProjectId = projectId };
@@ -101,13 +101,13 @@ namespace neco_board_ce.Utils.Check
         /// <param name="taskId">The ID of the task.</param>
         /// <param name="role">The minimum required role.</param>
         /// <returns>A <see cref="CheckResult"/> containing the result and the project ID.</returns>
-        public async Task<CheckResult> HasAccessToTask(string userId, string taskId, ProjectRole role)
+        public async Task<CheckResult> HasAccessToTask(Guid userId, Guid taskId, ProjectRole role)
         {
             var projectIdResult = await _taskRepository.GetProjectById(taskId);
             if (!projectIdResult.Success) return new CheckResult { Result = false, Message = projectIdResult.Message };
             if (projectIdResult.Data is null) return new CheckResult { Result = false, Message = "Task not found" };
 
-            var projectId = projectIdResult.Data;
+            var projectId = projectIdResult.Data.Value;
 
             var userInProject = await _userProjectRoleRepository.GetByUserAndProject(userId, projectId);
             if (!userInProject.Success) return new CheckResult { Result = false, Message = userInProject.Message, ProjectId = projectId };
@@ -123,7 +123,7 @@ namespace neco_board_ce.Utils.Check
         /// <param name="userId">The ID of the user to check.</param>
         /// <param name="projectId">The ID of the project.</param>
         /// <returns>A <see cref="CheckResult"/> containing the result and the project ID.</returns>
-        public async Task<CheckResult> HasAccessToProject(string userId, string projectId)
+        public async Task<CheckResult> HasAccessToProject(Guid userId, Guid projectId)
         {
             var userInProject = await _userProjectRoleRepository.GetByUserAndProject(userId, projectId);
             if(!userInProject.Success) return new CheckResult { Result = false, Message = userInProject.Message, ProjectId = projectId };
@@ -139,7 +139,7 @@ namespace neco_board_ce.Utils.Check
         /// <param name="projectId">The ID of the project.</param>
         /// <param name="role">The minimum required role.</param>
         /// <returns>A <see cref="CheckResult"/> containing the result and the project ID.</returns>
-        public async Task<CheckResult> HasAccessToProject(string userId, string projectId, ProjectRole role)
+        public async Task<CheckResult> HasAccessToProject(Guid userId, Guid projectId, ProjectRole role)
         {
             var userInProject = await _userProjectRoleRepository.GetByUserAndProject(userId, projectId);
             if (!userInProject.Success) return new CheckResult { Result = false, Message = userInProject.Message, ProjectId = projectId };
