@@ -8,6 +8,7 @@ using neco_board_ce.Models.DTO.Response.Users;
 using neco_board_ce.Models.Entity;
 using neco_board_ce.Models.Enums;
 using neco_board_ce.Repositories.Tables;
+using neco_board_ce.Services.Logs;
 using neco_board_ce.Utils.Check;
 using neco_board_ce.Utils.Controllers;
 
@@ -33,18 +34,21 @@ namespace neco_board_ce.Controllers.API
         private readonly AccountRepository _repository;
         private readonly ProjectRepository _projectRepository;
         private readonly TaskUserRepository _taskUserRepository;
+        private readonly AuditService _auditService;
 
         public UserController(
             ILogger<UserController> logger,
             AccountRepository repository,
             ProjectRepository projectRepository,
-            TaskUserRepository taskUserRepository
+            TaskUserRepository taskUserRepository,
+            AuditService auditService
             )
         {
             _logger = logger;
             _repository = repository;
             _projectRepository = projectRepository;
             _taskUserRepository = taskUserRepository;
+            _auditService = auditService;
         }
 
         /// <summary>
@@ -260,6 +264,7 @@ namespace neco_board_ce.Controllers.API
                 return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Failed to update the user role." });
             }
 
+            await _auditService.UserLog(id, UserId!.Value, LogType.EDITED, "Workspace role updated", $"New Role: {dto.Role}");
             return NoContent();
         }
 
@@ -311,6 +316,7 @@ namespace neco_board_ce.Controllers.API
             var updateResult = await _repository.UpdatePassword(UserId!.Value, BCrypt.Net.BCrypt.HashPassword(dto.Password));
             if(updateResult.Success)
             {
+                await _auditService.UserLog(UserId.Value, UserId.Value, LogType.EDITED, "Password changed");
                 return NoContent();
             }
 
@@ -471,6 +477,7 @@ namespace neco_board_ce.Controllers.API
             var deleteResult = await _repository.Delete(userId);
             if(deleteResult.Success)
             {
+                await _auditService.UserLog(userId, UserId!.Value, LogType.DELETED, "User account deleted");
                 return NoContent();
             }
 
