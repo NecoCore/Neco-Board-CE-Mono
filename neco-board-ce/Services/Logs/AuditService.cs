@@ -75,5 +75,18 @@ namespace neco_board_ce.Services.Logs
                 throw;
             }
         }
+
+        public async Task Log(Guid userId, LogType type, string name, LogFor logFor, string? description = null, Guid? newUserId = null, Guid? projectId = null)
+        {
+            try
+            {
+                await _repository.Create(name, userId, type, logFor, description, newUserId: newUserId, projectId: projectId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating log");
+                throw;
+            }
+        }
     }
 }
