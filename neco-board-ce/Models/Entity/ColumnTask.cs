@@ -10,35 +10,35 @@ namespace neco_board_ce.Models.Entity
     {
         [Key]
         [Column("id")]
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-        
+        public Guid Id { get; set; } = Guid.NewGuid();
+
         [Required]
         [Column("column_id")]
-        public string ColumnId { get; set; }
-        
+        public Guid ColumnId { get; set; }
+
         [ForeignKey(nameof(ColumnId))]
         [JsonIgnore]
-        public Column Column { get; set; }
+        public Column Column { get; set; } = null!;
         
         [Required]
         [Column("owner_id")]
-        public string OwnerId { get; set; }
-        
+        public Guid OwnerId { get; set; }
+
         [ForeignKey(nameof(OwnerId))]
         [InverseProperty(nameof(Account.OwnerTasks))]
-        public Account Owner { get; set; }
+        public Account Owner { get; set; } = null!;
         
         [Required]
         [MaxLength(250)]
         [Column("name")]
-        public string Name { get; set; }
-        
+        public string Name { get; set; } = string.Empty;
+
         [MaxLength(1000)]
         [Column("description")]
         public string? Description { get; set; }
         
         [Column("text", TypeName = "text")]
-        public string Text { get; set; }
+        public string Text { get; set; } = string.Empty;
 
         [Column("priority")]
         public TaskPriority Priority { get; set; } = TaskPriority.LOW;
@@ -47,7 +47,7 @@ namespace neco_board_ce.Models.Entity
         public ColumnTaskStatus Status { get; set; } = ColumnTaskStatus.NOT_STARTED;
 
         [Column("created_at")]
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
 
         [JsonIgnore]
