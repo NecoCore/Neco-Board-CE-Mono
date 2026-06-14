@@ -1,6 +1,8 @@
 using System.Net.Http.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
+using neco_board_ce.Interfaces;
 using neco_board_ce.Models.DTO.Request.Projects;
 using neco_board_ce.Models.DTO.Response.Projects;
 using neco_board_ce.Models.Entity;
@@ -128,6 +130,88 @@ namespace neco_board_ce.Tests.Integration.Controllers
                 l.Name == "Project created" &&
                 l.UserId == admin.Id
             );
+        }
+
+        [Fact]
+        public async Task GetAllProjects_ShouldReturnNoContent_WhenNoProjectsExist()
+        {
+            // Arrange
+            using var scope = _factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<Data.AppDbContext>();
+            var jwtService = scope.ServiceProvider.GetRequiredService<JwtService>();
+            await db.Database.EnsureCreatedAsync();
+
+            // 1. Create a workspace owner (required for GetAllProjects)
+            var owner = new Account
+            {
+                Id = Guid.NewGuid(),
+                Name = "Workspace Owner",
+                Login = "owner_" + Guid.NewGuid(),
+                Password = "hashed_password",
+                Role = WorkspaceRoles.OWNER
+            };
+            db.Accounts.Add(owner);
+            await db.SaveChangesAsync();
+
+            // 2. Generate token and set headers
+            var token = jwtService.GenerateAccessToken(owner);
+            _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            // 3. Ensure no projects exist (SQLite in-memory shared across tests, so clear it)
+            db.Projects.RemoveRange(db.Projects);
+            await db.SaveChangesAsync();
+            db.Projects.Should().BeEmpty();
+
+            // Act
+            var response = await _client.GetAsync("/api/project");
+
+            // Assert
+            response.StatusCode.Should().Be(System.Net.HttpStatusCode.NoContent);
+        }
+
+        [Fact]
+        public async Task CreateProject_ShouldNotifyRealtime_WhenSuccessful()
+        {
+            // Arrange
+            var notifierMock = new Mock<IRealtimeNotifier>();
+
+            // Создаем кастомную фабрику для этого теста
+            var factory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services =>
+                {
+                    services.AddSingleton<IRealtimeNotifier>(notifierMock.Object);
+                });
+            });
+            var client = factory.CreateClient();
+
+            using var scope = factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<Data.AppDbContext>();
+            var jwtService = scope.ServiceProvider.GetRequiredService<JwtService>();
+            await db.Database.EnsureCreatedAsync();
+
+            var admin = new Account
+            {
+                Id = Guid.NewGuid(),
+                Name = "Realtime Admin",
+                Login = "rt_admin_" + Guid.NewGuid(),
+                Password = "hashed_password",
+                Role = WorkspaceRoles.ADMIN
+            };
+            db.Accounts.Add(admin);
+            await db.SaveChangesAsync();
+
+            var token = jwtService.GenerateAccessToken(admin);
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            var request = new ProjectRequest { Name = "Realtime Test Project" };
+
+            // Act
+            var response = await client.PostAsJsonAsync("/api/project", request);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            notifierMock.Verify(n => n.ProjectCreated(), Times.Once, "SignalR notification ProjectCreated should be called");
         }
     }
 }
