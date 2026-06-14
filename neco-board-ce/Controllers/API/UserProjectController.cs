@@ -10,6 +10,7 @@ using neco_board_ce.Models.DTO.Response.Messages;
 using neco_board_ce.Models.DTO.Response.Users;
 using neco_board_ce.Models.Enums;
 using neco_board_ce.Repositories.Tables;
+using neco_board_ce.Services.Logs;
 using neco_board_ce.Utils.Check;
 using neco_board_ce.Utils.Controllers;
 
@@ -34,15 +35,18 @@ namespace neco_board_ce.Controllers.API
     {
         private readonly ILogger<UserProjectController> _logger;
         private readonly UserProjectRoleRepository _repository;
+        private readonly AuditService _auditService;
         private readonly IRealtimeNotifier _notifier;
 
         public UserProjectController(
             ILogger<UserProjectController> logger,
             UserProjectRoleRepository repository,
+            AuditService auditService,
             IRealtimeNotifier notifier
         ) {
             _logger = logger;
             _repository = repository;
+            _auditService = auditService;
             _notifier = notifier;
         }
 
@@ -135,6 +139,7 @@ namespace neco_board_ce.Controllers.API
             var result = await _repository.AddToProject(dto.Id, projectId, dto.Role);
             if (result.Success)
             {
+                await _auditService.ProjectLog(projectId, UserId!.Value, LogType.EDITED, "User added to project", $"Added UserId: {dto.Id}, Role: {dto.Role}");
                 await _notifier.ProjectAddUser(projectId, dto.Id);
                 return NoContent();
             }
@@ -210,6 +215,7 @@ namespace neco_board_ce.Controllers.API
             var editResult = await _repository.UpdateRole(userId, projectId, dto.Role);
             if (editResult.Success)
             {
+                await _auditService.ProjectLog(projectId, UserId!.Value, LogType.EDITED, "Project member role updated", $"UserId: {userId}, New Role: {dto.Role}");
                 await _notifier.ProjectUpdateUser(projectId, userId, dto.Role);
                 return NoContent();
             }
@@ -281,6 +287,7 @@ namespace neco_board_ce.Controllers.API
             var removingResult = await _repository.RemoveFromProject(userId, projectId);
             if (removingResult.Success)
             {
+                await _auditService.ProjectLog(projectId, UserId!.Value, LogType.EDITED, "User removed from project", $"Removed UserId: {userId}");
                 await _notifier.ProjectRemoveUser(projectId, userId);
                 return NoContent();
             }
