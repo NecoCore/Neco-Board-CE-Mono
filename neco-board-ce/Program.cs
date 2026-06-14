@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using neco_board_ce.Attributes.ProjectAccessAttribute;
 using neco_board_ce.Controllers.Hubs;
 using neco_board_ce.Data;
 using neco_board_ce.Interfaces;
@@ -135,10 +136,15 @@ builder.Services.AddScoped<TaskAttachmentsRepository>();
 builder.Services.AddScoped<LogsRepository>();
 
 // Register services
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<UserAccessCheck>();
 builder.Services.AddSingleton<IRealtimeNotifier, RealtimeNotifier>();
+
+// Register custom authorization
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, ProjectAccessPolicyProvider>();
+builder.Services.AddScoped<IAuthorizationHandler, ProjectAccessHandler>();
 
 // Rate Limiting
 builder.Services.AddRateLimiter(options =>
