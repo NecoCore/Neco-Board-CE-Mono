@@ -24,13 +24,64 @@ namespace neco_board_ce.Tests.Integration.Controllers
         }
 
         [Fact]
+        public async Task GetProjectById_ShouldReturnForbidden_WhenUserIsNotMember()
+        {
+            // Arrange
+            using var scope = _factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<Data.AppDbContext>();
+            var jwtService = scope.ServiceProvider.GetRequiredService<JwtService>();
+            await db.Database.EnsureCreatedAsync();
+
+            // 1. Create User A (The Attacker)
+            var userA = new Account
+            {
+                Id = Guid.NewGuid(),
+                Name = "Attacker User",
+                Login = "attacker_" + Guid.NewGuid(),
+                Password = "hashed_password",
+                Role = WorkspaceRoles.USER
+            };
+
+            // 2. Create User B (The Victim) and their Project
+            var userB = new Account
+            {
+                Id = Guid.NewGuid(),
+                Name = "Victim User",
+                Login = "victim_" + Guid.NewGuid(),
+                Password = "hashed_password",
+                Role = WorkspaceRoles.USER
+            };
+
+            var projectB = new Project
+            {
+                Id = Guid.NewGuid(),
+                Name = "Victim's Private Project",
+                OwnerId = userB.Id
+            };
+
+            db.Accounts.AddRange(userA, userB);
+            db.Projects.Add(projectB);
+            await db.SaveChangesAsync();
+
+            // 3. Generate token for User A
+            var tokenA = jwtService.GenerateAccessToken(userA);
+            _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenA);
+
+            // Act
+            // User A tries to access Project B
+            var response = await _client.GetAsync($"/api/project/{projectB.Id}");
+
+            // Assert
+            response.StatusCode.Should().Be(System.Net.HttpStatusCode.Forbidden, "Users must not access projects they aren't members of");
+        }
+
+        [Fact]
         public async Task CreateProject_ShouldRecordAuditLog_WhenSuccessful()
         {
             // Arrange
             using var scope = _factory.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<Data.AppDbContext>();
             var jwtService = scope.ServiceProvider.GetRequiredService<JwtService>();
-            var logsRepo = scope.ServiceProvider.GetRequiredService<LogsRepository>();
             await db.Database.EnsureCreatedAsync();
 
             // 1. Create a global admin user
@@ -61,12 +112,11 @@ namespace neco_board_ce.Tests.Integration.Controllers
 
             // Assert
             response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadFromJsonAsync<CreateProjectRequest>();
-            result.Should().NotBeNull();
-            var projectId = result!.ProjectId;
+            var createResponse = await response.Content.ReadFromJsonAsync<CreateProjectRequest>();
+            createResponse.Should().NotBeNull();
+            var projectId = createResponse!.ProjectId;
 
             // 4. Verify Audit Log
-            // Note: We need a new scope to see changes from the API request in the DB
             using var verifyScope = _factory.Services.CreateScope();
             var verifyLogsRepo = verifyScope.ServiceProvider.GetRequiredService<LogsRepository>();
             
