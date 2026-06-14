@@ -19,7 +19,7 @@ namespace neco_board_ce.Models.DTO.Response.Logs
 
         public LogItemResponse() { }
 
-        public LogItemResponse(Logs log)
+        public LogItemResponse(neco_board_ce.Models.Entity.Logs log)
         {
             Id = log.Id;
             Name = log.Name;
