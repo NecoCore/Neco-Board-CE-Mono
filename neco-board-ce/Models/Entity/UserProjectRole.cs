@@ -10,25 +10,25 @@ namespace neco_board_ce.Models.Entity
     {
         [Key]
         [Column("id")]
-        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         [Required]
         [Column("user_id")]
-        public string UserId { get; set; }
+        public Guid UserId { get; set; }
 
         [ForeignKey(nameof(UserId))]
         [InverseProperty(nameof(Account.Projects))]
         [JsonIgnore]
-        public Account User { get; set; }
+        public Account User { get; set; } = null!;
 
         [Required]
         [Column("project_id")]
-        public string ProjectId { get; set; }
+        public Guid ProjectId { get; set; }
 
         [ForeignKey(nameof(ProjectId))]
         [InverseProperty(nameof(Project.UserProjectRoles))]
         [JsonIgnore]
-        public Project Project { get; set; }
+        public Project Project { get; set; } = null!;
 
         [Column("role")]
         public ProjectRole Role { get; set; } = ProjectRole.USER;
