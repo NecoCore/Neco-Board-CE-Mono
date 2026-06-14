@@ -122,6 +122,16 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> AddUserInProject([FromBody] UserProjectRequest dto, string projectId)
         {
+            if (!IsWorkspaceAdmin())
+            {
+                var rolesResult = await _repository.GetByUserAndProject(UserId!, projectId);
+                if (!rolesResult.Success || rolesResult.Data is null) return NotFound();
+
+                // Privilege Escalation check: cannot assign a role higher than your own
+                if (dto.Role < rolesResult.Data.Role)
+                    return Forbid();
+            }
+
             var result = await _repository.AddToProject(dto.Id, projectId, dto.Role);
             if (result.Success)
             {
