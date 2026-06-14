@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using neco_board_ce.Data.Context;
 using neco_board_ce.Interfaces;
 using neco_board_ce.Services.Storage;
@@ -103,12 +102,7 @@ namespace neco_board_ce.Data
 
         public static async Task InitializeDatabaseAsync(AppDbContext db, IConfiguration config)
         {
-            var dbType = config["Database:Type"]?.ToLower() ?? "sqlite";
-
-            if (dbType == "sqlite")
-                db.Database.EnsureCreated();
-            else
-                await db.Database.MigrateAsync();
+            await db.Database.MigrateAsync();
 
             string adminLogin = config["Admin:Username"] ?? "admin";
             string adminPass = config["Admin:Password"] ?? "Admin123";
