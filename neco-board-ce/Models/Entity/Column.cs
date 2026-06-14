@@ -9,26 +9,29 @@ namespace neco_board_ce.Models.Entity
     {
         [Key]
         [Column("id")]
-        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         [Required]
         [Column("project_id")]
-        public string ProjectId { get; set; }
+        public Guid ProjectId { get; set; }
 
         [ForeignKey(nameof(ProjectId))]
         [JsonIgnore]
-        public Project Project { get; set; }
+        public Project Project { get; set; } = null!;
 
         [Required]
         [MaxLength(100)]
         [Column("name")]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         [Column("queue")]
         public int Queue { get; set; }
 
+        [Column("color")]
+        public string? Color { get; set; } = "#FFFFFF";
+
         [Column("created_at")]
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         [JsonIgnore]
         public List<ColumnTask> Tasks { get; set; } = [];
