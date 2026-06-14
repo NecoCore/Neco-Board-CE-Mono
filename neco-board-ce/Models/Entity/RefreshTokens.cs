@@ -9,18 +9,18 @@ namespace neco_board_ce.Models.Entity
     {
         [Key]
         [Column("id")]
-        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         [Required]
         [Column("token")]
-        public string Token { get; set; }
+        public string Token { get; set; } = string.Empty;
 
         [Required]
-        public string AccountId { get; set; }
+        public string AccountId { get; set; } = string.Empty;
 
         [ForeignKey(nameof(AccountId))]
         [JsonIgnore]
-        public Account Account { get; set; }
+        public Account Account { get; set; } = null!;
 
         [Required]
         [Column("expires_at")]
