@@ -5,7 +5,7 @@ namespace neco_board_ce.Models.DTO.Response.Socket
     /// </summary>
     public class TaskColumnUpdatedResponse
     {
-        public string OldColumnId { get; set; } = string.Empty;
-        public string NewColumnId { get; set; } = string.Empty;
+        public Guid OldColumnId { get; set; }
+        public Guid NewColumnId { get; set; }
     }
 }
