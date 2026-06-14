@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
@@ -63,11 +64,17 @@ else
 }
 
 // Json serializer options to ignore cycles in entity relationships
-builder.Services.AddControllers()
+builder.Services.AddControllers(options =>
+    {
+        options.Filters.Add<ValidationFilter>();
+    })
     .AddJsonOptions(o => {
         o.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         o.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
+
+// Register FluentValidation validators from the assembly containing Program (which includes all validators in the project).
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 // Register SignalR (WebSocket)
 builder.Services.AddSignalR()
