@@ -32,7 +32,7 @@ namespace neco_board_ce.Repositories.Tables
             }
         }
 
-        public async Task<RepositoryResult<Column?>> GetById(string id)
+        public async Task<RepositoryResult<Column?>> GetById(Guid id)
         {
             _logger.LogDebug("Fetching column with ID: {Id} from the database.", id);
             try
@@ -47,7 +47,7 @@ namespace neco_board_ce.Repositories.Tables
             }
         }
 
-        public async Task<RepositoryResult<List<Column>>> GetByProjectId(string projectId)
+        public async Task<RepositoryResult<List<Column>>> GetByProjectId(Guid projectId)
         {
             _logger.LogDebug("Fetching columns for Project ID: {ProjectId} from the database.", projectId);
             try
@@ -70,7 +70,7 @@ namespace neco_board_ce.Repositories.Tables
             return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to create column." };
         }
 
-        public async Task<RepositoryResult<bool>> Update(string id, Column entity)
+        public async Task<RepositoryResult<bool>> Update(Guid id, Column entity)
         {
             _logger.LogDebug("Updating column with ID: {Id} in the database.", id);
             var existing = await _db.Columns.FindAsync(id);
@@ -81,13 +81,14 @@ namespace neco_board_ce.Repositories.Tables
             }
 
             existing.Name = entity.Name;
+            existing.Color = entity.Color;
 
             _db.Columns.Update(existing);
             var saved = await _db.SaveChangesAsync() > 0;
-            return new RepositoryResult<bool> { Success = saved, Message = saved ? existing.Id : "Failed to update column." };
+            return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to update column." };
         }
 
-        public async Task<RepositoryResult<bool>> UpdateOrder(string projectId, string id, int newOrder)
+        public async Task<RepositoryResult<bool>> UpdateOrder(Guid projectId, Guid id, int newOrder)
         {
             _logger.LogDebug("Updating order of column with ID: {Id} to new order: {NewOrder} in the database.", id, newOrder);
 
@@ -142,7 +143,7 @@ namespace neco_board_ce.Repositories.Tables
             return new RepositoryResult<bool> { Success = result, Message = result ? string.Empty : "Failed to update column order." };
         }
 
-        public async Task<RepositoryResult<bool>> Delete(string id)
+        public async Task<RepositoryResult<bool>> Delete(Guid id)
         {
             _logger.LogDebug("Deleting column with ID: {Id} from the database.", id);
             var existing = await _db.Columns.FindAsync(id);

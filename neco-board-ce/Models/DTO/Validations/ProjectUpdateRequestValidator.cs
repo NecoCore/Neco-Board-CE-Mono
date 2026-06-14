@@ -15,7 +15,7 @@ namespace neco_board_ce.Models.DTO.Validations
                 .MaximumLength(1000).WithMessage("Description cannot exceed 1000 characters.");
 
             RuleFor(x => x.OwnerId)
-                .NotEmpty().When(x => x.OwnerId != null).WithMessage("OwnerId cannot be empty if provided.");
+                .NotEqual(Guid.Empty).When(x => x.OwnerId != null).WithMessage("Owner ID cannot be empty if provided.");
         }
     }
 }

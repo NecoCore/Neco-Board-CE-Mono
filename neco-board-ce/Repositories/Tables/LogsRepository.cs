@@ -25,7 +25,7 @@ namespace neco_board_ce.Repositories.Tables
                 .ToListAsync();
         }
 
-        public async Task<List<Logs>> GetByProjectId(string projectId)
+        public async Task<List<Logs>> GetByProjectId(Guid projectId)
         {
             _logger.LogDebug("Fetching logs for project ID: {ProjectId} from the database.", projectId);
             return await _db.Logs
@@ -35,7 +35,7 @@ namespace neco_board_ce.Repositories.Tables
                 .ToListAsync();
         }
 
-        public async Task<List<Logs>> GetByUserId(string userId)
+        public async Task<List<Logs>> GetByUserId(Guid userId)
         {
             _logger.LogDebug("Fetching logs for user ID: {UserId} from the database.", userId);
             return await _db.Logs
@@ -44,7 +44,7 @@ namespace neco_board_ce.Repositories.Tables
                 .ToListAsync();
         }
 
-        public async Task<bool> Create(string name, string userId, string projectId, LogType logType, string? description = null)
+        public async Task<bool> Create(string name, Guid userId, Guid? projectId, LogType logType, LogFor logFor, string? description = null, Guid? newUserId = null)
         {
             _logger.LogDebug("Creating log for user ID: {UserId} in project ID: {ProjectId}.", userId, projectId);
 
@@ -53,7 +53,9 @@ namespace neco_board_ce.Repositories.Tables
                 Name = name,
                 UserId = userId,
                 ProjectId = projectId,
+                NewUserId = newUserId,
                 LogType = logType,
+                LogFor = logFor,
                 Description = description
             });
 
