@@ -71,6 +71,20 @@ namespace neco_board_ce.Data
             modelBuilder.Entity<Account>()
                 .HasIndex(a => a.Login)
                 .IsUnique();
+
+            // index
+            modelBuilder.Entity<UserProjectRole>()
+                .HasIndex(r => new { r.UserId, r.ProjectId })
+                .IsUnique();
+
+            modelBuilder.Entity<Column>()
+                .HasIndex(c => c.ProjectId);
+
+            modelBuilder.Entity<ColumnTask>()
+                .HasIndex(t => t.ColumnId);
+
+            modelBuilder.Entity<RefreshTokens>()
+                .HasIndex(r => r.Token);
         }
     }
 }
