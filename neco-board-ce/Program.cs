@@ -10,6 +10,7 @@ using neco_board_ce.Data;
 using neco_board_ce.Interfaces;
 using neco_board_ce.Repositories.Tables;
 using neco_board_ce.Services.Authentication;
+using neco_board_ce.Services.Logs;
 using neco_board_ce.Services.Realtime;
 using neco_board_ce.Utils;
 using neco_board_ce.Utils.Check;
@@ -149,6 +150,7 @@ builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<SessionService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<UserAccessCheck>();
+builder.Services.AddScoped<AuditService>();
 builder.Services.AddSingleton<IRealtimeNotifier, RealtimeNotifier>();
 
 // Register custom authorization

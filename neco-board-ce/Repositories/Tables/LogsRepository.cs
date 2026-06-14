@@ -44,7 +44,7 @@ namespace neco_board_ce.Repositories.Tables
                 .ToListAsync();
         }
 
-        public async Task<bool> Create(string name, Guid userId, Guid? projectId, LogType logType, LogFor logFor, string? description = null, Guid? newUserId = null)
+        public async Task<bool> Create(string name, Guid userId, LogType logType, LogFor logFor, string? description = null, Guid? newUserId = null, Guid? projectId = null)
         {
             _logger.LogDebug("Creating log for user ID: {UserId} in project ID: {ProjectId}.", userId, projectId);
 

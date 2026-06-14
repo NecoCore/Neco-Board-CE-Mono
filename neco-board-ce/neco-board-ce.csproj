@@ -36,8 +36,4 @@
     <PackageReference Include="Saunter" Version="0.13.0" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.13.22" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Services\Logs\" />
-  </ItemGroup>
 </Project>
