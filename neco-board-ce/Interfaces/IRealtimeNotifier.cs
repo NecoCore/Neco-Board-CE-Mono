@@ -6,45 +6,45 @@ namespace neco_board_ce.Interfaces
     {
         #region Projects
         Task ProjectCreated();
-        Task ProjectUpdated(string projectId, string projectName);
-        Task ProjectDeleted(string projectId);
+        Task ProjectUpdated(Guid projectId, string projectName);
+        Task ProjectDeleted(Guid projectId);
         #endregion
 
         #region Users in project
-        Task ProjectAddUser(string projectId, string userId);
-        Task ProjectUpdateUser(string projectId, string userId, ProjectRole newRole);
-        Task ProjectRemoveUser(string projectId, string userId);
+        Task ProjectAddUser(Guid projectId, Guid userId);
+        Task ProjectUpdateUser(Guid projectId, Guid userId, ProjectRole newRole);
+        Task ProjectRemoveUser(Guid projectId, Guid userId);
         #endregion
 
         #region Columns
-        Task ColumnCreated(string projectId);
-        Task ColumnUpdated(string projectId, string columnId, string columnName);
-        Task ColumnOrderUpdated(string projectId);
-        Task ColumnDelete(string projectId, string columnId);
+        Task ColumnCreated(Guid projectId);
+        Task ColumnUpdated(Guid projectId, Guid columnId, string columnName);
+        Task ColumnOrderUpdated(Guid projectId);
+        Task ColumnDelete(Guid projectId, Guid columnId);
         #endregion
 
         #region Tasks
-        Task TaskCreated(string projectId, string columnId);
-        Task TaskUpdated(string projectId, string taskId);
-        Task TaskColumnUpdated(string projectId, string oldColumnId, string newColumnId);
-        Task TaskStatusUpdated(string projectId, string taskId, string columnId, ColumnTaskStatus newStatus);
-        Task TaskPriorityUpdated(string projectId, string taskId, string columnId, TaskPriority newPriority);
-        Task TaskDelete(string projectId, string columnId, string taskId);
+        Task TaskCreated(Guid projectId, Guid columnId);
+        Task TaskUpdated(Guid projectId, Guid taskId);
+        Task TaskColumnUpdated(Guid projectId, Guid oldColumnId, Guid newColumnId);
+        Task TaskStatusUpdated(Guid projectId, Guid taskId, Guid columnId, ColumnTaskStatus newStatus);
+        Task TaskPriorityUpdated(Guid projectId, Guid taskId, Guid columnId, TaskPriority newPriority);
+        Task TaskDelete(Guid projectId, Guid columnId, Guid taskId);
         #endregion
 
         #region Users in task
-        Task TaskAddUser(string taskId);
-        Task TaskRemoveUser(string taskId, string userId);
+        Task TaskAddUser(Guid taskId);
+        Task TaskRemoveUser(Guid taskId, Guid userId);
         #endregion
 
         #region Task attachments
-        Task TaskAttachmentUploaded(string taskId);
-        Task TaskAttachmentDeleted(string taskId, string attachmentId);
+        Task TaskAttachmentUploaded(Guid taskId);
+        Task TaskAttachmentDeleted(Guid taskId, Guid attachmentId);
         #endregion
 
         #region Task images
-        Task TaskImageUploaded(string taskId);
-        Task TaskImageDeleted(string taskId, string imageId);
+        Task TaskImageUploaded(Guid taskId);
+        Task TaskImageDeleted(Guid taskId, Guid imageId);
         #endregion
     }
 }
