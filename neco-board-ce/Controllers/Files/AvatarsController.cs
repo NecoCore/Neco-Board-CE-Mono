@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using neco_board_ce.Data;
 using neco_board_ce.Interfaces;
 using neco_board_ce.Models.DTO.Response.Messages;
+using neco_board_ce.Models.Enums;
 using neco_board_ce.Repositories.Tables;
+using neco_board_ce.Services.Logs;
 using neco_board_ce.Utils.Controllers;
 
 namespace neco_board_ce.Controllers.Files
@@ -23,11 +26,13 @@ namespace neco_board_ce.Controllers.Files
     {
         private readonly IFileStorage _storage;
         private readonly AccountRepository _repository;
+        private readonly AuditService _auditService;
 
-        public AvatarsController(IFileStorage storage, AccountRepository repository)
+        public AvatarsController(IFileStorage storage, AccountRepository repository, AuditService auditService)
         {
             _storage = storage;
             _repository = repository;
+            _auditService = auditService;
         }
 
         /// <summary>
@@ -57,6 +62,7 @@ namespace neco_board_ce.Controllers.Files
             var result = await _repository.UpdateAvatar(UserId.Value, path);
             if (!result.Success) return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Failed to update profile." });
 
+            await _auditService.UserLog(UserId.Value, UserId.Value, LogType.EDITED, "Avatar uploaded", $"Path: {path}");
             return Ok(new { path });
         }
 
