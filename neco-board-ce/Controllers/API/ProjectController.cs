@@ -84,7 +84,8 @@ namespace neco_board_ce.Controllers.API
             if (result.Success)
             {
                 var data = result.Data?.Select(p => new ProjectItemResponse(p)).ToList();
-                return data is null ? NoContent() : Ok(data);
+                if (data == null || data.Count == 0) return NoContent();
+                return Ok(data);
             }
             _logger.LogError("Failed to retrieve all projects: {Error}", result.Message ?? "unknown error");
             return StatusCode(StatusCodes.Status500InternalServerError,

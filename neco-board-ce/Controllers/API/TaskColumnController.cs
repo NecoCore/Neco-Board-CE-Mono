@@ -91,6 +91,8 @@ namespace neco_board_ce.Controllers.API
                 ColumnId = t.ColumnId
             }).ToList();
 
+            if (taskLitle.Count == 0) return NoContent();
+
             return Ok(taskLitle);
         }
 

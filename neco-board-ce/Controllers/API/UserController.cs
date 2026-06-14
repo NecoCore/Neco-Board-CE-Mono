@@ -81,7 +81,7 @@ namespace neco_board_ce.Controllers.API
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     new ErrorMessageResponse { Message = "Unable to retrieve the user list. Please try again later." });
             }
-            else if (resut.Data is null) return NoContent();
+            if (resut.Data == null || resut.Data.Count == 0) return NoContent();
 
             var data = resut.Data.Select(x => new UserInfoResponse(x)).ToList();
             return Ok(data);
@@ -122,7 +122,7 @@ namespace neco_board_ce.Controllers.API
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     new ErrorMessageResponse { Message = "Unable to retrieve the user list. Please try again later." });
             }
-            else if (result.Data is null) return NoContent();
+            if (result.Data == null || result.Data.Count == 0) return NoContent();
 
             var data = result.Data.Select(x => new UserInfoResponse(x)).ToList();
             return Ok(data);
@@ -172,7 +172,7 @@ namespace neco_board_ce.Controllers.API
                     new ErrorMessageResponse { Message = "Unable to perform the search. Please try again later." });
 
             }
-            else if (result.Data is null) return NoContent();
+            if (result.Data == null || result.Data.Count == 0) return NoContent();
 
             var data = result.Data.Select(x => new UserInfoResponse(x)).ToList(); 
             return Ok(data);
@@ -215,7 +215,7 @@ namespace neco_board_ce.Controllers.API
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     new ErrorMessageResponse { Message = "Unable to retrieve the user list. Please try again later." });
             }
-            else if (resut.Data is null) return NoContent();
+            if (resut.Data == null || resut.Data.Count == 0) return NoContent();
 
             var data = resut.Data.Select(x => new AccountDetailResponse(x)).ToList();
             return Ok(data);

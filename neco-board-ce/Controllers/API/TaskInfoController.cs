@@ -170,6 +170,7 @@ namespace neco_board_ce.Controllers.API
                 _logger.LogError("Failed to fetch users in {taskId}: {error}", taskId, users.Message ?? "unknown error");
                 return BadRequest(new ErrorMessageResponse { Message = users.Message ?? "unknown error" });
             }
+            if (users.Data == null || users.Data.Count == 0) return NoContent();
             return Ok(users.Data);
         }
 
