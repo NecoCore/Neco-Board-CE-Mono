@@ -5,7 +5,9 @@ using neco_board_ce.Models.DTO.Request.Projects;
 using neco_board_ce.Models.DTO.Response.Messages;
 using neco_board_ce.Models.DTO.Response.Projects;
 using neco_board_ce.Models.Entity;
+using neco_board_ce.Models.Enums;
 using neco_board_ce.Repositories.Tables;
+using neco_board_ce.Services.Logs;
 using neco_board_ce.Utils.Check;
 using neco_board_ce.Utils.Controllers;
 
@@ -31,6 +33,7 @@ namespace neco_board_ce.Controllers.API
         private readonly ILogger<ProjectController> _logger;
         private readonly ProjectRepository _repository;
         private readonly UserProjectRoleRepository _userProjectReposirory;
+        private readonly AuditService _auditService;
         private readonly IRealtimeNotifier _notifier;
         private readonly UserAccessCheck _userAccess;
 
@@ -38,12 +41,14 @@ namespace neco_board_ce.Controllers.API
             ILogger<ProjectController> logger,
             ProjectRepository repository,
             UserProjectRoleRepository userProject,
+            AuditService auditService,
             IRealtimeNotifier notifier,
             UserAccessCheck userAccess
             )
         {
             _logger = logger;
             _repository = repository;
+            _auditService = auditService;
             _notifier = notifier;
             _userProjectReposirory = userProject;
             _userAccess = userAccess;
@@ -192,6 +197,7 @@ namespace neco_board_ce.Controllers.API
                 _logger.LogWarning("Failed to assign OWNER role to user '{UserId}' in project '{ProjectId}': {Error}", UserId, project.Id, createdResult.Message ?? "unknown error");
             }
 
+            await _auditService.ProjectLog(project.Id, UserId!.Value, LogType.CREATED, "Project created", $"Name: {project.Name}");
             await _notifier.ProjectCreated();
             return Ok(new CreateProjectRequest { ProjectId = project.Id });
         }
@@ -238,6 +244,7 @@ namespace neco_board_ce.Controllers.API
             var result = await _repository.Update(id, project);
             if (result.Success)
             {
+                await _auditService.ProjectLog(id, UserId!.Value, LogType.EDITED, "Project updated", $"New Name: {dto.Name}");
                 await _notifier.ProjectUpdated(id, dto.Name);
                 return NoContent();
             }
@@ -281,6 +288,7 @@ namespace neco_board_ce.Controllers.API
             var result = await _repository.Delete(id);
             if (result.Success)
             {
+                await _auditService.ProjectLog(id, UserId!.Value, LogType.DELETED, "Project deleted");
                 await _notifier.ProjectDeleted(id);
                 return NoContent();
             }
