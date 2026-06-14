@@ -10,25 +10,28 @@ namespace neco_board_ce.Models.Entity
         [Key]
         [Column("id")]
         public string Id { get; set; } = Guid.NewGuid().ToString();
-        
+
         [Required]
         [MaxLength(100)]
         [Column("name")]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         
         [MaxLength(1000)]
         [Column("description")]
         public string? Description { get; set; }
-        
+
+        [Column("is_archived")]
+        public bool IsArchived { get; set; } = false;
+
         [Required]
         [Column("owner_id")]
-        public string OwnerId { get; set; }
-        
+        public string OwnerId { get; set; } = string.Empty;
+
         [ForeignKey(nameof(OwnerId))]
-        public Account Owner { get; set; }
+        public Account Owner { get; set; } = null!;
         
         [Column("created_at")]
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
         [JsonIgnore]
         public List<Logs> Logs { get; set; } = [];
