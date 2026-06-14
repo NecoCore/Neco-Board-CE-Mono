@@ -9,7 +9,7 @@ namespace neco_board_ce.Models.Entity
     {
         [Key]
         [Column("id")]
-        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         [Required]
         [MaxLength(100)]
@@ -25,7 +25,7 @@ namespace neco_board_ce.Models.Entity
 
         [Required]
         [Column("owner_id")]
-        public string OwnerId { get; set; } = string.Empty;
+        public Guid OwnerId { get; set; }
 
         [ForeignKey(nameof(OwnerId))]
         public Account Owner { get; set; } = null!;

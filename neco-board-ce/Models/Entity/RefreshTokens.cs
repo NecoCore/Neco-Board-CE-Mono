@@ -16,7 +16,7 @@ namespace neco_board_ce.Models.Entity
         public string Token { get; set; } = string.Empty;
 
         [Required]
-        public string AccountId { get; set; } = string.Empty;
+        public Guid AccountId { get; set; }
 
         [ForeignKey(nameof(AccountId))]
         [JsonIgnore]
