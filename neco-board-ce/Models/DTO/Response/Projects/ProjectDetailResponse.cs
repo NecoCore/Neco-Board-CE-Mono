@@ -25,7 +25,7 @@ namespace neco_board_ce.Models.DTO.Response.Projects
             OwnerName = project.Owner?.Name ?? "Unknown";
             CreatedAt = project.CreatedAt;
             ColumnCount = project.Columns.Count;
-            TaskCount = project.Columns.Sum(c => c.ColumnTasks.Count);
+            TaskCount = project.Columns.Sum(c => c.Tasks.Count);
             MemberCount = project.UserProjectRoles.Count;
         }
     }
