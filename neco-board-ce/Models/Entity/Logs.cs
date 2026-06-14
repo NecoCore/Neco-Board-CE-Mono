@@ -10,30 +10,37 @@ namespace neco_board_ce.Models.Entity
     {
         [Key]
         [Column("id")]
-        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         [Required]
         [MaxLength(200)]
         [Column("name")]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         [Required]
         [Column("user_id")]
-        public string UserId { get; set; }
+        public Guid UserId { get; set; }
 
         [ForeignKey(nameof(UserId))]
         [InverseProperty(nameof(Account.Logs))]
         [JsonIgnore]
-        public Account User { get; set; }
+        public Account User { get; set; } = null!;
 
-        [Required]
         [Column("project_id")]
-        public string ProjectId { get; set; }
+        public Guid? ProjectId { get; set; }
 
         [ForeignKey(nameof(ProjectId))]
         [InverseProperty(nameof(Project.Logs))]
         [JsonIgnore]
-        public Project Project { get; set; }
+        public Project? Project { get; set; }
+
+        [Column("new_user_id")]
+        public Guid? NewUserId { get; set; }
+
+        [ForeignKey(nameof(NewUserId))]
+        [InverseProperty(nameof(Account.Logs))]
+        [JsonIgnore]
+        public Account? NewUser { get; set; }
 
         [MaxLength(1000)]
         [Column("description")]
@@ -42,7 +49,10 @@ namespace neco_board_ce.Models.Entity
         [Column("log_type")]
         public LogType LogType { get; set; }
 
+        [Column("log_for")]
+        public LogFor LogFor { get; set; }
+
         [Column("created_at")]
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }
