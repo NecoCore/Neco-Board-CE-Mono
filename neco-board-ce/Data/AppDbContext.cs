@@ -34,10 +34,6 @@ namespace neco_board_ce.Data
                 .Property(l => l.LogType)
                 .HasConversion<string>();
 
-            modelBuilder.Entity<Logs>()
-                .Property(l => l.LogFor)
-                .HasConversion<string>();
-
             modelBuilder.Entity<ColumnTask>()
                 .Property(t => t.Priority)
                 .HasConversion<string>();
@@ -63,12 +59,6 @@ namespace neco_board_ce.Data
                 .HasOne(l => l.User)
                 .WithMany(a => a.Logs)
                 .HasForeignKey(l => l.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Logs>()
-                .HasOne(l => l.NewUser)
-                .WithMany()
-                .HasForeignKey(l => l.NewUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<RefreshTokens>()

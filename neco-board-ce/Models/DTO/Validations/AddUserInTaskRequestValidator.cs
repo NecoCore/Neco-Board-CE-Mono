@@ -7,8 +7,9 @@ namespace neco_board_ce.Models.DTO.Validations
     {
         public AddUserInTaskRequestValidator()
         {
-            // Guid? validation is handled by type system, but we can add specific rules if needed.
-            // For now, no specific rules required for UserId.
+            RuleFor(x => x.UserId)
+                .Must(id => id == null || Guid.TryParse(id, out _))
+                .WithMessage("User ID must be a valid GUID.");
         }
     }
 }

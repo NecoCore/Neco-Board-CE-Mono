@@ -28,7 +28,7 @@ namespace neco_board_ce.Controllers.API
     /// </remarks>
     [ApiController]
     [Authorize]
-    [Route("api/project/{projectId:guid}/users")]
+    [Route("api/project/{projectId}/users")]
     [Tags("Project members")]
     public class UserProjectController : UserAuth
     {
@@ -75,7 +75,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetUsersProjectById(Guid projectId)
+        public async Task<IActionResult> GetUsersProjectById(string projectId)
         {
             var result = await _repository.GetByProjectId(projectId);
             if (!result.Success)
@@ -84,7 +84,7 @@ namespace neco_board_ce.Controllers.API
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     new ErrorMessageResponse { Message = "Unable to retrieve the project member list. Please try again later." });
             }
-            if (result.Data is null || result.Data.Count == 0) return NoContent();
+            if (result.Data is null) return NoContent();
 
             var data = result.Data.Select(x => new UserInfoProjectResponse(x)).ToList();
             return Ok(data);
@@ -120,11 +120,11 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> AddUserInProject([FromBody] UserProjectRequest dto, Guid projectId)
+        public async Task<IActionResult> AddUserInProject([FromBody] UserProjectRequest dto, string projectId)
         {
             if (!IsWorkspaceAdmin())
             {
-                var rolesResult = await _repository.GetByUserAndProject(UserId!.Value, projectId);
+                var rolesResult = await _repository.GetByUserAndProject(UserId!, projectId);
                 if (!rolesResult.Success || rolesResult.Data is null) return NotFound();
 
                 // Privilege Escalation check: cannot assign a role higher than your own
@@ -175,7 +175,7 @@ namespace neco_board_ce.Controllers.API
         /// <response code="403">The caller lacks permission or role hierarchy rules prevent this update.</response>
         /// <response code="404">The target user or the calling user is not a member of the project.</response>
         /// <response code="500">Repository or infrastructure failure. Response body contains the error description.</response>
-        [HttpPatch("{userId:guid}", Name = "UpdateUserInProject")]
+        [HttpPatch("{userId}", Name = "UpdateUserInProject")]
         [Authorize]
         [ProjectAccess(ProjectRole.USER)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -183,7 +183,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> UpdateUserInProject(Guid projectId, Guid userId, [FromBody] EditUserInProjectRequest dto)
+        public async Task<IActionResult> UpdateUserInProject(string projectId, string userId, [FromBody] EditUserInProjectRequest dto)
         {
             var result = await _repository.GetByUserAndProject(userId, projectId);
             if(!result.Success)
@@ -196,7 +196,7 @@ namespace neco_board_ce.Controllers.API
 
             if(!IsWorkspaceAdmin())
             {
-                var rolesResult = await _repository.GetByUserAndProject(UserId!.Value, projectId);
+                var rolesResult = await _repository.GetByUserAndProject(UserId!, projectId);
                 if(!rolesResult.Success || rolesResult.Data is null) return NotFound();
 
                 if (result.Data.Role == ProjectRole.OWNER)
@@ -246,7 +246,7 @@ namespace neco_board_ce.Controllers.API
         /// <response code="403">The caller lacks permission or role hierarchy rules prevent this removal.</response>
         /// <response code="404">The target user or the calling user is not a member of the project.</response>
         /// <response code="500">Repository or infrastructure failure. Response body contains the error description.</response>
-        [HttpDelete("{userId:guid}", Name = "RemoveUserFromProject")]
+        [HttpDelete("{userId}", Name = "RemoveUserFromProject")]
         [Authorize]
         [ProjectAccess(ProjectRole.USER)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -254,7 +254,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> DeleteUserInProject(Guid projectId, Guid userId)
+        public async Task<IActionResult> DeleteUserInProject(string projectId, string userId)
         {
             var result = await _repository.GetByUserAndProject(userId, projectId);
             if (!result.Success)
@@ -267,7 +267,7 @@ namespace neco_board_ce.Controllers.API
 
             if (!IsWorkspaceAdmin())
             {
-                var rolesResult = await _repository.GetByUserAndProject(UserId!.Value, projectId);
+                var rolesResult = await _repository.GetByUserAndProject(UserId!, projectId);
                 if (!rolesResult.Success || rolesResult.Data is null) return NotFound();
 
                 if (result.Data.Role == ProjectRole.OWNER)

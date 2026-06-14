@@ -32,7 +32,7 @@ namespace neco_board_ce.Repositories.Tables
             }
         }
 
-        public async Task<RepositoryResult<TaskAttachments?>> GetById(Guid id)
+        public async Task<RepositoryResult<TaskAttachments?>> GetById(string id)
         {
             _logger.LogDebug("Fetching task attachment with ID: {Id} from the database.", id);
             try
@@ -47,7 +47,7 @@ namespace neco_board_ce.Repositories.Tables
             }
         }
 
-        public async Task<RepositoryResult<List<TaskAttachments>>> GetByTaskId(Guid taskId)
+        public async Task<RepositoryResult<List<TaskAttachments>>> GetByTaskId(string taskId)
         {
             _logger.LogDebug("Fetching attachments for task ID: {TaskId} from the database.", taskId);
             try
@@ -70,7 +70,7 @@ namespace neco_board_ce.Repositories.Tables
             return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to create task attachment." };
         }
 
-        public async Task<RepositoryResult<bool>> Update(Guid id, TaskAttachments entity)
+        public async Task<RepositoryResult<bool>> Update(string id, TaskAttachments entity)
         {
             _logger.LogDebug("Updating task attachment with ID: {Id} in the database.", id);
             var existing = await _db.TaskAttachments.FindAsync(id);
@@ -89,7 +89,7 @@ namespace neco_board_ce.Repositories.Tables
             return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to update task attachment." };
         }
 
-        public async Task<RepositoryResult<bool>> Delete(Guid id)
+        public async Task<RepositoryResult<bool>> Delete(string id)
         {
             _logger.LogDebug("Deleting task attachment with ID: {Id} from the database.", id);
             var existing = await _db.TaskAttachments.FindAsync(id);

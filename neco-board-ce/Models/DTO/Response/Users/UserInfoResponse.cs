@@ -5,7 +5,7 @@ namespace neco_board_ce.Models.DTO.Response.Users
 {
     public class UserInfoResponse
     {
-        public Guid Id { get; set; }
+        public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public string? Avatar { get; set; }
         public WorkspaceRoles Role { get; set; }

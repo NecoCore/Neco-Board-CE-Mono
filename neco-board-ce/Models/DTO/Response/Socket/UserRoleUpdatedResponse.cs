@@ -7,7 +7,7 @@ namespace neco_board_ce.Models.DTO.Response.Socket
     /// </summary>
     public class UserRoleUpdatedResponse
     {
-        public Guid UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
         public ProjectRole Role { get; set; }
     }
 }

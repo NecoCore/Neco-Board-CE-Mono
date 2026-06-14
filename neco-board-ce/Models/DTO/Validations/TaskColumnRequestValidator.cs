@@ -12,8 +12,7 @@ namespace neco_board_ce.Models.DTO.Validations
                 .MaximumLength(250).WithMessage("Task name cannot exceed 250 characters.");
 
             RuleFor(x => x.ColumnId)
-                .NotEmpty().WithMessage("Column ID is required.")
-                .NotEqual(Guid.Empty).WithMessage("Column ID cannot be empty.");
+                .NotEmpty().WithMessage("Column ID is required.");
 
             RuleFor(x => x.Description)
                 .MaximumLength(1000).WithMessage("Description cannot exceed 1000 characters.");

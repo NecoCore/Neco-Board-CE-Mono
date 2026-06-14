@@ -68,20 +68,20 @@ namespace neco_board_ce.Controllers.API
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller is not a project member and is not a workspace administrator.</response>
         /// <response code="500">Repository or infrastructure failure. Response body contains the error description.</response>
-        [HttpGet("in-project/{projectId:guid}", Name = "GetColumnsInProject")]
+        [HttpGet("in-project/{projectId}", Name = "GetColumnsInProject")]
         [ProjectAccess]
         [ProducesResponseType(typeof(List<ColumnItemResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetColumnsProject(Guid projectId)
+        public async Task<IActionResult> GetColumnsProject(string projectId)
         {
             var result = await _repository.GetByProjectId(projectId);
             if(result.Success)
             {
                 var data = result.Data?.Select(c => new ColumnItemResponse(c)).ToList();
-                return (data == null || data.Count == 0) ? NoContent() : Ok(data);
+                return data is null ? NoContent() : Ok(data);
             }
             _logger.LogError("Failed to retrieve columns for project '{ProjectId}': {Error}", projectId, result.Message ?? "unknown error");
             return StatusCode(StatusCodes.Status500InternalServerError,
@@ -116,7 +116,7 @@ namespace neco_board_ce.Controllers.API
         /// <response code="403">The caller does not have MODERATOR role and is not a workspace administrator.</response>
         /// <response code="404">No column data found for the specified project.</response>
         /// <response code="500">Failed to persist the new column. Response body contains the error description.</response>
-        [HttpPost("in-project/{projectId:guid}", Name = "CreateColumnInProject")]
+        [HttpPost("in-project/{projectId}", Name = "CreateColumnInProject")]
         [ProjectAccess(ProjectRole.USER)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
@@ -124,7 +124,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> CreateColumnProject(Guid projectId, [FromBody] ColumnRequest dto)
+        public async Task<IActionResult> CreateColumnProject(string projectId, [FromBody] ColumnRequest dto)
         {
             var result = await _repository.GetByProjectId(projectId);
             if(!result.Success) return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "unknown error" });
@@ -137,7 +137,6 @@ namespace neco_board_ce.Controllers.API
                 Name = dto.Name,
                 Queue = queue,
                 ProjectId = projectId,
-                Color = dto.Color
             };
 
             var createResult = await _repository.Create(newColumn);
@@ -172,24 +171,23 @@ namespace neco_board_ce.Controllers.API
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller does not have MODERATOR role and is not a workspace administrator.</response>
         /// <response code="500">Failed to persist the update. Response body contains the error description.</response>
-        [HttpPut("{columnId:guid}", Name = "UpdateColumn")]
+        [HttpPut("{columnId}", Name = "UpdateColumn")]
         [ProjectAccess(ProjectRole.USER)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> UpdateColumn(Guid columnId, [FromBody] ColumnRequest dto)
+        public async Task<IActionResult> UpdateColumn(string columnId, [FromBody] ColumnRequest dto)
         {
             var updateColumn = new Column
             {
-                Name = dto.Name,
-                Color = dto.Color
+                Name = dto.Name
             };
             var updateResult = await _repository.Update(columnId, updateColumn);
 
             if (updateResult.Success)
             {
-                await _notifier.ColumnUpdated(CurrentProjectId!.Value, columnId, dto.Name);
+                await _notifier.ColumnUpdated(CurrentProjectId!, updateResult.Message!, dto.Name);
                 return NoContent();
             }
 
@@ -221,18 +219,18 @@ namespace neco_board_ce.Controllers.API
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller does not have MODERATOR role and is not a workspace administrator.</response>
         /// <response code="500">Failed to persist the new order. Response body contains the error description.</response>
-        [HttpPut("{columnId:guid}/order", Name = "UpdateColumnOrder")]
+        [HttpPut("{columnId}/order", Name = "UpdateColumnOrder")]
         [ProjectAccess(ProjectRole.USER)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> UpdateColumnOrder(Guid columnId, [FromBody] int queue)
+        public async Task<IActionResult> UpdateColumnOrder(string columnId, [FromBody] int queue)
         {
-            var result = await _repository.UpdateOrder(CurrentProjectId!.Value, columnId, queue);
+            var result = await _repository.UpdateOrder(CurrentProjectId!, columnId, queue);
             if (result.Success)
             {
-                await _notifier.ColumnOrderUpdated(CurrentProjectId!.Value);
+                await _notifier.ColumnOrderUpdated(CurrentProjectId!);
                 return Ok();
             }
 
@@ -261,18 +259,18 @@ namespace neco_board_ce.Controllers.API
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller does not have MODERATOR role and is not a workspace administrator.</response>
         /// <response code="500">Failed to delete the column. Response body contains the error description.</response>
-        [HttpDelete("{columnId:guid}", Name = "DeleteColumn")]
+        [HttpDelete("{columnId}", Name = "DeleteColumn")]
         [ProjectAccess(ProjectRole.USER)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> DeleteColumn(Guid columnId)
+        public async Task<IActionResult> DeleteColumn(string columnId)
         {
             var result = await _repository.Delete(columnId);
             if (result.Success)
             {
-                await _notifier.ColumnDelete(CurrentProjectId!.Value, columnId);
+                await _notifier.ColumnDelete(CurrentProjectId!, columnId);
                 return NoContent();
             }
 

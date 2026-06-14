@@ -9,7 +9,7 @@ namespace neco_board_ce.Models.DTO.Validations
         {
             RuleFor(x => x.ColumnId)
                 .NotEmpty().WithMessage("Column ID is required.")
-                .NotEqual(Guid.Empty).WithMessage("Column ID cannot be empty.");
+                .Must(id => Guid.TryParse(id, out _)).WithMessage("Column ID must be a valid GUID.");
         }
     }
 }

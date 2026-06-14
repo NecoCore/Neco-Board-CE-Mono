@@ -33,7 +33,7 @@ namespace neco_board_ce.Repositories.Tables
             }
         }
 
-        public async Task<RepositoryResult<Account?>> GetById(Guid id)
+        public async Task<RepositoryResult<Account?>> GetById(string id)
         {
             _logger.LogDebug("Fetching account with ID {Id} from the database.", id);
             try
@@ -62,16 +62,16 @@ namespace neco_board_ce.Repositories.Tables
             }
         }
 
-        public async Task<RepositoryResult<List<Account>>> SearchAccounts(string query, int count, int page, WorkspaceRoles? role = null)
+        public async Task<RepositoryResult<List<Account>>> SearchAccounts(string quwery, int count, int page, WorkspaceRoles? role = null)
         {
             try
             {
-                var accounts = await _db.Accounts.Where(a => a.Name.Contains(query) && (role == null || a.Role == role)).Skip((page - 1) * count).Take(count).ToListAsync();
+                var accounts = await _db.Accounts.Where(a => a.Name.Contains(quwery) && (role == null || a.Role == role)).Skip((page - 1) * count).Take(count).ToListAsync();
                 return new RepositoryResult<List<Account>> { Success = true, Data = accounts };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while searching accounts with query {Query} in the database.", query);
+                _logger.LogError(ex, "An error occurred while searching accounts with query {Query} in the database.", quwery);
                 return new RepositoryResult<List<Account>> { Success = false, Message = "An error occurred while searching accounts." };
             }
         }
@@ -99,7 +99,7 @@ namespace neco_board_ce.Repositories.Tables
             return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to create account." };
         }
 
-        public async Task<RepositoryResult<bool>> Update(Guid id, Account entity)
+        public async Task<RepositoryResult<bool>> Update(string id, Account entity)
         {
             _logger.LogDebug("Updating account with ID {Id} in the database.", id);
             var existing = await _db.Accounts.FindAsync(id);
@@ -121,7 +121,7 @@ namespace neco_board_ce.Repositories.Tables
             return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to update account." };
         }
 
-        public async Task<RepositoryResult<bool>> UpdatePassword(Guid id, string newPassword)
+        public async Task<RepositoryResult<bool>> UpdatePassword(string id, string newPassword)
         {
             _logger.LogDebug("Updating password for account with ID: {Id} in the database.", id);
             var existing = await _db.Accounts.FindAsync(id);
@@ -137,7 +137,7 @@ namespace neco_board_ce.Repositories.Tables
             return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to update password." };
         }
 
-        public async Task<RepositoryResult<bool>> UpdateRole(Guid id, WorkspaceRoles role)
+        public async Task<RepositoryResult<bool>> UpdateRole(string id, WorkspaceRoles role)
         {
             _logger.LogDebug("Updating role in {Role} user with ID: {ID}", role, id);
             var existing = await GetById(id);
@@ -158,7 +158,7 @@ namespace neco_board_ce.Repositories.Tables
             return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to update role." };
         }
 
-        public async Task<RepositoryResult<bool>> UpdateAvatar(Guid id, string filePath)
+        public async Task<RepositoryResult<bool>> UpdateAvatar(string id, string filePath)
         {
             _logger.LogDebug("Updating avatar user with ID: {ID}", id);
             var existing = await GetById(id);
@@ -179,7 +179,7 @@ namespace neco_board_ce.Repositories.Tables
             return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to update avatar." };
         }
 
-        public async Task<RepositoryResult<bool>> Delete(Guid id)
+        public async Task<RepositoryResult<bool>> Delete(string id)
         {
             _logger.LogDebug("Deleting account with ID {Id} from the database.", id);
             var account = await _db.Accounts.FirstOrDefaultAsync(a => a.Id == id);

@@ -242,13 +242,13 @@ namespace neco_board_ce.Controllers.API
         /// <response code="400">Repository rejected the role update. Response body contains the error description.</response>
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller is not the workspace OWNER, or the requested target role is OWNER.</response>
-        [HttpPatch("role/{id:guid}", Name = "EditUserRole")]
+        [HttpPatch("role/{id}", Name = "EditUserRole")]
         [Authorize(Roles = "OWNER")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> EditRole(Guid id, [FromBody] EditWorkspaceRoleRequest dto)
+        public async Task<IActionResult> EditRole(string id, [FromBody] EditWorkspaceRoleRequest dto)
         {
             if (dto.Role == Models.Enums.WorkspaceRoles.OWNER)
                 return Forbid();
@@ -296,7 +296,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> EditPassword(EditPasswordRequest dto)
         {
-            var result = await _repository.GetById(UserId!.Value);
+            var result = await _repository.GetById(UserId!);
             if(!result.Success)
             {
                 _logger.LogError("Failed to retrieve account '{UserId}' for password update: {Error}", UserId, result.Message ?? "unknown error");
@@ -308,7 +308,7 @@ namespace neco_board_ce.Controllers.API
             if(!BCrypt.Net.BCrypt.Verify(dto.OldPassword, data.Password)) return BadRequest(new ErrorMessageResponse { Message = "The current password is incorrect." });
             if(dto.Password != dto.ConfirmPassword) return BadRequest(new ErrorMessageResponse { Message = "New passwords do not match." });
 
-            var updateResult = await _repository.UpdatePassword(UserId!.Value, BCrypt.Net.BCrypt.HashPassword(dto.Password));
+            var updateResult = await _repository.UpdatePassword(UserId!, BCrypt.Net.BCrypt.HashPassword(dto.Password));
             if(updateResult.Success)
             {
                 return NoContent();
@@ -346,7 +346,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetMyProjects()
         {
-            var result = await _projectRepository.GetAllByUserId(UserId!.Value);
+            var result = await _projectRepository.GetAllByUserId(UserId!);
             if(!result.Success)
             {
                 _logger.LogError("Failed to retrieve projects for user '{UserId}': {Error}", UserId, result.Message ?? "unknown error");
@@ -354,7 +354,7 @@ namespace neco_board_ce.Controllers.API
                     new ErrorMessageResponse { Message = "Unable to retrieve your projects. Please try again later." });
             }
             var data = result.Data?.Select(p => new ProjectItemResponse(p)).ToList();
-            return (data == null || data.Count == 0) ? NoContent() : Ok(data);
+            return data is null ? NoContent() : Ok(data);
         }
 
         /// <summary>
@@ -386,24 +386,24 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetMyTasks()
         {
-            var result = await _taskUserRepository.GetFullByUserId(UserId!.Value);
+            var result = await _taskUserRepository.GetFullByUserId(UserId!);
             if(!result.Success)
             {
                 _logger.LogError("Failed to retrieve tasks for user '{UserId}': {Error}", UserId, result.Message ?? "unknown error");
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     new ErrorMessageResponse { Message = "Unable to retrieve your tasks. Please try again later." });
             }
-            if(result.Data is null || result.Data.Count == 0) return NoContent();
+            if(result.Data is null) return NoContent();
 
             var data = result.Data
                 .GroupBy(t => new
                 {
-                    ProjectId = t.Task.Column?.ProjectId ?? Guid.Empty,
+                    ProjectId = t.Task.Column?.ProjectId,
                     ProjectName = t.Task.Column?.Project?.Name ?? "Unknown Project"
                 })
                 .Select(group => new AllMyTasksResponse
                 {
-                    ProjectId = group.Key.ProjectId,
+                    ProjectId = group.Key.ProjectId!.ToString(),
                     ProjectName = group.Key.ProjectName,
                     Tasks = group.Select(t => new Models.DTO.Response.Task.MyTaskResponse
                     {
@@ -447,7 +447,7 @@ namespace neco_board_ce.Controllers.API
         /// <response code="403">Deletion is forbidden by role rules (target is OWNER, or target is ADMIN and caller is not OWNER).</response>
         /// <response code="404">No user found for the provided identifier.</response>
         /// <response code="500">Repository or infrastructure failure. Response body contains the error description.</response>
-        [HttpDelete("{userId:guid}", Name = "DeleteUser")]
+        [HttpDelete("{userId}", Name = "DeleteUser")]
         [Authorize(Roles = "ADMIN,OWNER")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
@@ -455,7 +455,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> DeleteUser(Guid userId)
+        public async Task<IActionResult> DeleteUser(string userId)
         {
             if (UserId == userId) return BadRequest(new ErrorMessageResponse { Message = "You cannot delete your own account." });
             var result = await _repository.GetById(userId);

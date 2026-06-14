@@ -22,7 +22,7 @@ namespace neco_board_ce.Repositories.Tables
             _logger.LogDebug("Fetching all projects from the database.");
             try
             {
-                var result = await _db.Projects.Where(p => !p.IsArchived).ToListAsync();
+                var result = await _db.Projects.ToListAsync();
                 return new RepositoryResult<List<Project>> { Success = true, Data = result };
             }
             catch (Exception ex)
@@ -32,13 +32,13 @@ namespace neco_board_ce.Repositories.Tables
             }
         }
 
-        public async Task<RepositoryResult<List<Project>>> GetAllByUserId(Guid id)
+        public async Task<RepositoryResult<List<Project>>> GetAllByUserId(string id)
         {
             _logger.LogDebug("Fetching all projects for user with ID {UserId} from the database.", id);
             try
             {
                 var result = await _db.UserProjectRoles
-                    .Where(upr => upr.UserId == id && !upr.Project.IsArchived)
+                    .Where(upr => upr.UserId == id)
                     .Select(upr => upr.Project)
                     .ToListAsync();
                 return new RepositoryResult<List<Project>> { Success = true, Data = result };
@@ -50,13 +50,13 @@ namespace neco_board_ce.Repositories.Tables
             }
         }
 
-        public async Task<RepositoryResult<List<Project>>> GetAllByOwnerId(Guid id)
+        public async Task<RepositoryResult<List<Project>>> GetAllByOwnerId(string id)
         {
             _logger.LogDebug("Fetching all projects by owner with ID {OwnerId} from the database.", id);
             try
             {
                 var result = await _db.Projects
-                    .Where(p => p.OwnerId == id && !p.IsArchived)
+                    .Where(p => p.OwnerId == id)
                     .ToListAsync();
                 return new RepositoryResult<List<Project>> { Success = true, Data = result };
             }
@@ -67,7 +67,7 @@ namespace neco_board_ce.Repositories.Tables
             }
         }
 
-        public async Task<RepositoryResult<Project?>> GetById(Guid id)
+        public async Task<RepositoryResult<Project?>> GetById(string id)
         {
             _logger.LogDebug("Fetching project with ID {ProjectId} from the database.", id);
             try
@@ -90,7 +90,7 @@ namespace neco_board_ce.Repositories.Tables
             return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to create project." };
         }
 
-        public async Task<RepositoryResult<bool>> Update(Guid id, Project entity)
+        public async Task<RepositoryResult<bool>> Update(string id, Project entity)
         {
             _logger.LogDebug("Updating project with ID {ProjectId} in the database.", id);
             var existing = await _db.Projects.FindAsync(id);
@@ -102,15 +102,14 @@ namespace neco_board_ce.Repositories.Tables
 
             existing.Name = entity.Name;
             existing.Description = entity.Description;
-            existing.IsArchived = entity.IsArchived;
-            existing.OwnerId = entity.OwnerId == Guid.Empty ? existing.OwnerId : entity.OwnerId;
+            existing.OwnerId = entity.OwnerId == "" ? existing.OwnerId : entity.OwnerId;
 
             _db.Projects.Update(existing);
             var saved = await _db.SaveChangesAsync() > 0;
             return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to update project." };
         }
 
-        public async Task<RepositoryResult<bool>> Delete(Guid id)
+        public async Task<RepositoryResult<bool>> Delete(string id)
         {
             _logger.LogDebug("Deleting project with ID {ProjectId} from the database.", id);
             var project = await _db.Projects.FirstOrDefaultAsync(a => a.Id == id);

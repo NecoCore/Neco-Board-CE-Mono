@@ -34,18 +34,18 @@ namespace neco_board_ce.Controllers.Hubs
         public Task ProjectUpdated(ProjectUpdatedResponse payload) => Task.CompletedTask;
 
         [Channel("ProjectDeleted")]
-        [PublishOperation(typeof(Guid), Summary = "Project deleted",
+        [PublishOperation(typeof(string), Summary = "Project deleted",
             Description = "Triggered by DELETE /api/project/{id}. Sent to project:{id} and the all group. Payload: project id.")]
-        public Task ProjectDeleted(Guid id) => Task.CompletedTask;
+        public Task ProjectDeleted(string id) => Task.CompletedTask;
 
         #endregion
 
         #region Project membership
 
         [Channel("UserAddedToProject")]
-        [PublishOperation(typeof(Guid), Summary = "User added to project",
+        [PublishOperation(typeof(string), Summary = "User added to project",
             Description = "Triggered by POST /api/project/{projectId}/users. Sent to project:{id}. Payload: user id.")]
-        public Task UserAddedToProject(Guid userId) => Task.CompletedTask;
+        public Task UserAddedToProject(string userId) => Task.CompletedTask;
 
         [Channel("UserRoleUpdatedInProject")]
         [PublishOperation(typeof(UserRoleUpdatedResponse), Summary = "User role updated",
@@ -53,9 +53,9 @@ namespace neco_board_ce.Controllers.Hubs
         public Task UserRoleUpdatedInProject(UserRoleUpdatedResponse payload) => Task.CompletedTask;
 
         [Channel("UserRemovedFromProject")]
-        [PublishOperation(typeof(Guid), Summary = "User removed from project",
+        [PublishOperation(typeof(string), Summary = "User removed from project",
             Description = "Triggered by DELETE /api/project/{projectId}/users/{userId}. Sent to project:{id} and the affected user. Payload: user id.")]
-        public Task UserRemovedFromProject(Guid userId) => Task.CompletedTask;
+        public Task UserRemovedFromProject(string userId) => Task.CompletedTask;
 
         #endregion
 
@@ -77,23 +77,23 @@ namespace neco_board_ce.Controllers.Hubs
         public Task ColumnUpdatedOrder() => Task.CompletedTask;
 
         [Channel("ColumnDeleted")]
-        [PublishOperation(typeof(Guid), Summary = "Column deleted",
+        [PublishOperation(typeof(string), Summary = "Column deleted",
             Description = "Triggered by DELETE /api/column/{columnId}. Sent to project:{id}. Payload: column id.")]
-        public Task ColumnDeleted(Guid columnId) => Task.CompletedTask;
+        public Task ColumnDeleted(string columnId) => Task.CompletedTask;
 
         #endregion
 
         #region Tasks (board level)
 
         [Channel("TaskCreated")]
-        [PublishOperation(typeof(Guid), Summary = "Task created",
+        [PublishOperation(typeof(string), Summary = "Task created",
             Description = "Triggered by POST /api/tasks. Sent to project:{id}. Payload: column id.")]
-        public Task TaskCreated(Guid columnId) => Task.CompletedTask;
+        public Task TaskCreated(string columnId) => Task.CompletedTask;
 
         [Channel("TaskUpdated")]
-        [PublishOperation(typeof(Guid), Summary = "Task updated",
+        [PublishOperation(typeof(string), Summary = "Task updated",
             Description = "Triggered by PUT /api/tasks/{taskId}. Sent to project:{id}. Payload: task id.")]
-        public Task TaskUpdated(Guid id) => Task.CompletedTask;
+        public Task TaskUpdated(string id) => Task.CompletedTask;
 
         [Channel("TaskColumnUpdated")]
         [PublishOperation(typeof(TaskColumnUpdatedResponse), Summary = "Task moved between columns",
@@ -125,9 +125,9 @@ namespace neco_board_ce.Controllers.Hubs
         public Task TaskUserAdded() => Task.CompletedTask;
 
         [Channel("TaskUserRemoved")]
-        [PublishOperation(typeof(Guid), Summary = "User removed from task",
+        [PublishOperation(typeof(string), Summary = "User removed from task",
             Description = "Triggered by DELETE /api/tasks/{taskId}/user. Sent to task:{taskId}. Payload: user id.")]
-        public Task TaskUserRemoved(Guid userId) => Task.CompletedTask;
+        public Task TaskUserRemoved(string userId) => Task.CompletedTask;
 
         #endregion
 
@@ -139,9 +139,9 @@ namespace neco_board_ce.Controllers.Hubs
         public Task TaskAttachmentUploaded() => Task.CompletedTask;
 
         [Channel("TaskAttachmentDeleted")]
-        [PublishOperation(typeof(Guid), Summary = "Attachment deleted from task",
+        [PublishOperation(typeof(string), Summary = "Attachment deleted from task",
             Description = "Triggered by DELETE files/task/{taskId}/attachments/{attachmentId}. Sent to task:{taskId}. Payload: attachment id.")]
-        public Task TaskAttachmentDeleted(Guid attachmentId) => Task.CompletedTask;
+        public Task TaskAttachmentDeleted(string attachmentId) => Task.CompletedTask;
 
         #endregion
 
@@ -153,23 +153,23 @@ namespace neco_board_ce.Controllers.Hubs
         public Task TaskImageUploaded() => Task.CompletedTask;
 
         [Channel("TaskImageDeleted")]
-        [PublishOperation(typeof(Guid), Summary = "Image deleted from task",
+        [PublishOperation(typeof(string), Summary = "Image deleted from task",
             Description = "Triggered by DELETE files/task/{taskId}/images/{imageId}. Sent to task:{taskId}. Payload: image id.")]
-        public Task TaskImageDeleted(Guid imageId) => Task.CompletedTask;
+        public Task TaskImageDeleted(string imageId) => Task.CompletedTask;
 
         #endregion
 
         #region Presence (hub lifecycle, not REST)
 
         [Channel("UserConnected")]
-        [PublishOperation(typeof(Guid), Summary = "User came online",
+        [PublishOperation(typeof(string), Summary = "User came online",
             Description = "Emitted by the hub on connect (not REST). Sent to all other clients. Payload: user id.")]
-        public Task UserConnected(Guid userId) => Task.CompletedTask;
+        public Task UserConnected(string userId) => Task.CompletedTask;
 
         [Channel("UserDisconnected")]
-        [PublishOperation(typeof(Guid), Summary = "User went offline",
+        [PublishOperation(typeof(string), Summary = "User went offline",
             Description = "Emitted by the hub on disconnect (not REST). Sent to all clients. Payload: user id.")]
-        public Task UserDisconnected(Guid userId) => Task.CompletedTask;
+        public Task UserDisconnected(string userId) => Task.CompletedTask;
 
         #endregion
     }

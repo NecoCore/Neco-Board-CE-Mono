@@ -33,7 +33,7 @@ namespace neco_board_ce.Services.Authentication
 
             var account = new Account
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.NewGuid().ToString(),
                 Name = dto.Name,
                 Login = dto.Login,
                 Password = BCrypt.Net.BCrypt.HashPassword(dto.Password)
@@ -55,9 +55,6 @@ namespace neco_board_ce.Services.Authentication
             var account = result.Data;
             if (account is null || !BCrypt.Net.BCrypt.Verify(dto.Password, account.Password))
                 return new AuthResult(false, Error: "Invalid login or password");
-
-            account.LastLoginAt = DateTime.UtcNow;
-            await _accountRepository.Update(account.Id, account);
 
             var accessToken = _jwtService.GenerateAccessToken(account);
             var (_, rawToken) = await _jwtService.GenerateRefreshToken(account.Id);

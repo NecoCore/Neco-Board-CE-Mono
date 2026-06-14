@@ -23,7 +23,7 @@ namespace neco_board_ce.Services.Authentication
         {
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, account.Id.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, account.Id),
                 new Claim(ClaimTypes.Name, account.Login),
                 new Claim(ClaimTypes.Role, account.Role.ToString()),
                 new Claim("name", account.Name),
@@ -45,7 +45,7 @@ namespace neco_board_ce.Services.Authentication
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public async Task<(RefreshTokens Entity, string RawToken)> GenerateRefreshToken(Guid accountId)
+        public async Task<(RefreshTokens Entity, string RawToken)> GenerateRefreshToken(string accountId)
         {
             var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
             var refreshToken = new RefreshTokens

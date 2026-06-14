@@ -5,12 +5,11 @@ namespace neco_board_ce.Models.DTO.Response.Users
 {
     public class AccountDetailResponse
     {
-        public Guid Id { get; set; }
+        public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public string? Avatar { get; set; }
         public WorkspaceRoles Role { get; set; }
         public DateTime CreatedAt { get; set; }
-        public DateTime? LastLoginAt { get; set; }
         
         public int ProjectCount { get; set; }
         public int AssignedTaskCount { get; set; }
@@ -24,7 +23,6 @@ namespace neco_board_ce.Models.DTO.Response.Users
             Avatar = account.Avatar;
             Role = account.Role;
             CreatedAt = account.CreatedAt;
-            LastLoginAt = account.LastLoginAt;
             ProjectCount = account.Projects.Count;
             AssignedTaskCount = account.Tasks.Count;
         }

@@ -24,115 +24,115 @@ namespace neco_board_ce.Services.Realtime
             _hub.Clients.Group(HubGroups.Admins).ProjectCreated();
 
 
-        public Task ProjectUpdated(Guid projectId, string projectName)
+        public Task ProjectUpdated(string projectId, string projectName)
         {
             var payload = new ProjectUpdatedResponse { Id = projectId, Name = projectName };
             return Task.WhenAll(
-                _hub.Clients.Group(HubGroups.Project(projectId.ToString())).ProjectUpdated(payload),
+                _hub.Clients.Group(HubGroups.Project(projectId)).ProjectUpdated(payload),
                 _hub.Clients.Group(HubGroups.Admins).ProjectUpdated(payload)
             );
         }
 
-        public Task ProjectDeleted(Guid projectId) => Task.WhenAll(
-            _hub.Clients.Group(HubGroups.Project(projectId.ToString())).ProjectDeleted(projectId),
+        public Task ProjectDeleted(string projectId) => Task.WhenAll(
+            _hub.Clients.Group(HubGroups.Project(projectId)).ProjectDeleted(projectId),
             _hub.Clients.Group(HubGroups.Admins).ProjectDeleted(projectId)
         );
         #endregion
 
         #region Users in projects
-        public Task ProjectAddUser(Guid projectId, Guid userId) => Task.WhenAll(
-            _hub.Clients.Group(HubGroups.Project(projectId.ToString())).UserAddedToProject(userId),
+        public Task ProjectAddUser(string projectId, string userId) => Task.WhenAll(
+            _hub.Clients.Group(HubGroups.Project(projectId)).UserAddedToProject(userId),
             _hub.Clients.Group(HubGroups.Admins).UserAddedToProject(userId)
         );
 
-        public Task ProjectUpdateUser(Guid projectId, Guid userId, ProjectRole newRole)
+        public Task ProjectUpdateUser(string projectId, string userId, ProjectRole newRole)
         {
             var payload = new UserRoleUpdatedResponse { UserId = userId, Role = newRole };
             return Task.WhenAll(
-                _hub.Clients.Group(HubGroups.Project(projectId.ToString())).UserRoleUpdatedInProject(payload),
+                _hub.Clients.Group(HubGroups.Project(projectId)).UserRoleUpdatedInProject(payload),
                 _hub.Clients.Group(HubGroups.Admins).UserRoleUpdatedInProject(payload)
             );
         }
 
-        public Task ProjectRemoveUser(Guid projectId, Guid userId) => Task.WhenAll(
-            _hub.Clients.Group(HubGroups.Project(projectId.ToString())).UserRemovedFromProject(userId),
+        public Task ProjectRemoveUser(string projectId, string userId) => Task.WhenAll(
+            _hub.Clients.Group(HubGroups.Project(projectId)).UserRemovedFromProject(userId),
             _hub.Clients.Group(HubGroups.Admins).UserRemovedFromProject(userId)
         );
         #endregion
 
         #region Columns
-        public Task ColumnCreated(Guid projectId) => Task.WhenAll(
-            _hub.Clients.Group(HubGroups.Project(projectId.ToString())).ColumnCreated());
+        public Task ColumnCreated(string projectId) => Task.WhenAll(
+            _hub.Clients.Group(HubGroups.Project(projectId)).ColumnCreated());
 
-        public Task ColumnUpdated(Guid projectId, Guid columnId, string columnName) =>
-            _hub.Clients.Group(HubGroups.Project(projectId.ToString()))
+        public Task ColumnUpdated(string projectId, string columnId, string columnName) =>
+            _hub.Clients.Group(HubGroups.Project(projectId))
                 .ColumnUpdated(new ColumnUpdatedResponse { ColumnId = columnId, Name = columnName });
 
-        public Task ColumnOrderUpdated(Guid projectId) => Task.WhenAll(
-            _hub.Clients.Group(HubGroups.Project(projectId.ToString())).ColumnUpdatedOrder());
+        public Task ColumnOrderUpdated(string projectId) => Task.WhenAll(
+            _hub.Clients.Group(HubGroups.Project(projectId)).ColumnUpdatedOrder());
 
-        public Task ColumnDelete(Guid projectId, Guid columnId) => Task.WhenAll(
-            _hub.Clients.Group(HubGroups.Project(projectId.ToString())).ColumnDeleted(columnId));
+        public Task ColumnDelete(string projectId, string columnId) => Task.WhenAll(
+            _hub.Clients.Group(HubGroups.Project(projectId)).ColumnDeleted(columnId));
         #endregion
 
         #region Tasks
-        public Task TaskCreated(Guid projectId, Guid columnId) =>
-            _hub.Clients.Group(HubGroups.Project(projectId.ToString())).TaskCreated(columnId);
+        public Task TaskCreated(string projectId, string columnId) =>
+            _hub.Clients.Group(HubGroups.Project(projectId)).TaskCreated(columnId);
 
-        public Task TaskUpdated(Guid projectId, Guid taskId) =>
-            _hub.Clients.Group(HubGroups.Project(projectId.ToString())).TaskUpdated(taskId);
+        public Task TaskUpdated(string projectId, string taskId) =>
+            _hub.Clients.Group(HubGroups.Project(projectId)).TaskUpdated(taskId);
 
-        public Task TaskColumnUpdated(Guid projectId, Guid oldColumnId, Guid newColumnId) =>
-            _hub.Clients.Group(HubGroups.Project(projectId.ToString()))
+        public Task TaskColumnUpdated(string projectId, string oldColumnId, string newColumnId) =>
+            _hub.Clients.Group(HubGroups.Project(projectId))
                 .TaskColumnUpdated(new TaskColumnUpdatedResponse { OldColumnId = oldColumnId, NewColumnId = newColumnId });
 
-        public Task TaskStatusUpdated(Guid projectId, Guid taskId, Guid columnId, ColumnTaskStatus newStatus)
+        public Task TaskStatusUpdated(string projectId, string taskId, string columnId, ColumnTaskStatus newStatus)
         {
             var payload = new TaskStatusUpdatedResponse { TaskId = taskId, ColumnId = columnId, Status = newStatus };
             return Task.WhenAll(
-                _hub.Clients.Group(HubGroups.Task(taskId.ToString())).TaskStatusUpdated(payload),
-                _hub.Clients.Group(HubGroups.Project(projectId.ToString())).TaskStatusUpdated(payload));
+                _hub.Clients.Group(HubGroups.Task(taskId)).TaskStatusUpdated(payload),
+                _hub.Clients.Group(HubGroups.Project(projectId)).TaskStatusUpdated(payload));
         }
 
-        public Task TaskPriorityUpdated(Guid projectId, Guid taskId, Guid columnId, TaskPriority newPriority)
+        public Task TaskPriorityUpdated(string projectId, string taskId, string columnId, TaskPriority newPriority)
         {
             var payload = new TaskPriorityUpdatedResponse { TaskId = taskId, ColumnId = columnId, Priority = newPriority };
             return Task.WhenAll(
-                _hub.Clients.Group(HubGroups.Task(taskId.ToString())).TaskPriorityUpdated(payload),
-                _hub.Clients.Group(HubGroups.Project(projectId.ToString())).TaskPriorityUpdated(payload));
+                _hub.Clients.Group(HubGroups.Task(taskId)).TaskPriorityUpdated(payload),
+                _hub.Clients.Group(HubGroups.Project(projectId)).TaskPriorityUpdated(payload));
         }
 
-        public Task TaskDelete(Guid projectId, Guid columnId, Guid taskId)
+        public Task TaskDelete(string projectId, string columnId, string taskId)
         {
             var payload = new TaskDeletedResponse { TaskId = taskId, ColumnId = columnId };
             return Task.WhenAll(
-                _hub.Clients.Group(HubGroups.Task(taskId.ToString())).TaskDeleted(payload),
-                _hub.Clients.Group(HubGroups.Project(projectId.ToString())).TaskDeleted(payload));
+                _hub.Clients.Group(HubGroups.Task(taskId)).TaskDeleted(payload),
+                _hub.Clients.Group(HubGroups.Project(projectId)).TaskDeleted(payload));
         }
         #endregion
 
         #region Users in task
-        public Task TaskAddUser(Guid taskId) =>
-            _hub.Clients.Group(HubGroups.Task(taskId.ToString())).TaskUserAdded();
+        public Task TaskAddUser(string taskId) =>
+            _hub.Clients.Group(HubGroups.Task(taskId)).TaskUserAdded();
 
-        public Task TaskRemoveUser(Guid taskId, Guid userId) =>
-            _hub.Clients.Group(HubGroups.Task(taskId.ToString())).TaskUserRemoved(userId);
+        public Task TaskRemoveUser(string taskId, string userId) =>
+            _hub.Clients.Group(HubGroups.Task(taskId)).TaskUserRemoved(userId);
         #endregion
 
         #region Task attachments
-        public Task TaskAttachmentUploaded(Guid taskId) =>
-            _hub.Clients.Group(HubGroups.Task(taskId.ToString())).TaskAttachmentUploaded();
+        public Task TaskAttachmentUploaded(string taskId) =>
+            _hub.Clients.Group(HubGroups.Task(taskId)).TaskAttachmentUploaded();
 
-        public Task TaskAttachmentDeleted(Guid taskId, Guid attachmentId) =>
-            _hub.Clients.Group(HubGroups.Task(taskId.ToString())).TaskAttachmentDeleted(attachmentId);
+        public Task TaskAttachmentDeleted(string taskId, string attachmentId) =>
+            _hub.Clients.Group(HubGroups.Task(taskId)).TaskAttachmentDeleted(attachmentId);
         #endregion
 
         #region Task images
-        public Task TaskImageUploaded(Guid taskId) =>
-            _hub.Clients.Group(HubGroups.Task(taskId.ToString())).TaskImageUploaded();
+        public Task TaskImageUploaded(string taskId) =>
+            _hub.Clients.Group(HubGroups.Task(taskId)).TaskImageUploaded();
 
-        public Task TaskImageDeleted(Guid taskId, Guid imageId) =>
-            _hub.Clients.Group(HubGroups.Task(taskId.ToString())).TaskImageDeleted(imageId);
+        public Task TaskImageDeleted(string taskId, string imageId) =>
+            _hub.Clients.Group(HubGroups.Task(taskId)).TaskImageDeleted(imageId);
         #endregion
     }
 }

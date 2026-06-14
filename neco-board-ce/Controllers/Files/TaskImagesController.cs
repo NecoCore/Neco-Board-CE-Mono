@@ -15,7 +15,7 @@ namespace neco_board_ce.Controllers.Files
     /// </summary>
     [ApiController]
     [Authorize]
-    [Route("files/task/{taskId:guid}/images")]
+    [Route("files/task/{taskId}/images")]
     [Tags("Task images")]
     public class TaskImagesController : UserAuth
     {
@@ -63,9 +63,9 @@ namespace neco_board_ce.Controllers.Files
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetImages(Guid taskId)
+        public async Task<IActionResult> GetImages(string taskId)
         {
-            var access = await _userAccess.HasAccessToTask(UserId!.Value, taskId);
+            var access = await _userAccess.HasAccessToTask(UserId!, taskId);
             if (!access.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var result = await _repository.GetByTaskId(taskId);
@@ -98,7 +98,7 @@ namespace neco_board_ce.Controllers.Files
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> UploadImage(Guid taskId, IFormFile file)
+        public async Task<IActionResult> UploadImage(string taskId, IFormFile file)
         {
             if (file is null || file.Length == 0)
                 return BadRequest(new ErrorMessageResponse { Message = "No file provided." });
@@ -110,7 +110,7 @@ namespace neco_board_ce.Controllers.Files
             if (!AllowedExtensions.Contains(ext))
                 return BadRequest(new ErrorMessageResponse { Message = $"File type '{ext}' is not allowed. Allowed types: {string.Join(", ", AllowedExtensions)}." });
 
-            var access = await _userAccess.HasAccessToTask(UserId!.Value, taskId);
+            var access = await _userAccess.HasAccessToTask(UserId!, taskId);
             if (!access.Result && !IsWorkspaceAdmin()) return Forbid();
 
             await using var stream = file.OpenReadStream();
@@ -143,14 +143,14 @@ namespace neco_board_ce.Controllers.Files
         /// <response code="401">Not authenticated.</response>
         /// <response code="403">No access to the task's project.</response>
         /// <response code="404">Image record or file not found.</response>
-        [HttpGet("{imageId:guid}", Name = "GetTaskImage")]
+        [HttpGet("{imageId}", Name = "GetTaskImage")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetImage(Guid taskId, Guid imageId)
+        public async Task<IActionResult> GetImage(string taskId, string imageId)
         {
-            var access = await _userAccess.HasAccessToTask(UserId!.Value, taskId);
+            var access = await _userAccess.HasAccessToTask(UserId!, taskId);
             if (!access.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var result = await _repository.GetById(imageId);
@@ -174,15 +174,15 @@ namespace neco_board_ce.Controllers.Files
         /// <response code="403">No access to the task's project.</response>
         /// <response code="404">Image not found.</response>
         /// <response code="500">Repository failure.</response>
-        [HttpDelete("{imageId:guid}", Name = "DeleteTaskImage")]
+        [HttpDelete("{imageId}", Name = "DeleteTaskImage")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> DeleteImage(Guid taskId, Guid imageId)
+        public async Task<IActionResult> DeleteImage(string taskId, string imageId)
         {
-            var access = await _userAccess.HasAccessToTask(UserId!.Value, taskId);
+            var access = await _userAccess.HasAccessToTask(UserId!, taskId);
             if (!access.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var existing = await _repository.GetById(imageId);

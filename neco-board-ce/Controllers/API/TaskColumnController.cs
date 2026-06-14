@@ -67,14 +67,14 @@ namespace neco_board_ce.Controllers.API
         /// <response code="400">Repository or database operation failed. Response body contains the error message.</response>
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller is not a project member and is not a workspace administrator.</response>
-        [HttpGet("in-column/{columnId:guid}", Name = "GetTasksInColumn")]
+        [HttpGet("in-column/{columnId}", Name = "GetTasksInColumn")]
         [ProjectAccess]
         [ProducesResponseType(typeof(List<TaskResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> GetInColumn(Guid columnId)
+        public async Task<IActionResult> GetInColumn(string columnId)
         {
             var tasks = await _repository.GetByColumnId(columnId);
             if (!tasks.Success) return BadRequest(new ErrorMessageResponse { Message = tasks.Message ?? "unknown error" });
@@ -118,14 +118,14 @@ namespace neco_board_ce.Controllers.API
         /// <response code="400">Repository or database operation failed. Response body contains the error message.</response>
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller is not a project member and is not a workspace administrator.</response>
-        [HttpGet("{taskId:guid}", Name = "GetTaskById")]
+        [HttpGet("{taskId}", Name = "GetTaskById")]
         [ProjectAccess]
         [ProducesResponseType(typeof(TaskDetailResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> GetTaskInfo(Guid taskId)
+        public async Task<IActionResult> GetTaskInfo(string taskId)
         {
             var task = await _repository.GetById(taskId);
             if (!task.Success) return BadRequest(new ErrorMessageResponse { Message = task.Message ?? "unknown error" });
@@ -166,7 +166,7 @@ namespace neco_board_ce.Controllers.API
             var task = new ColumnTask
             {
                 ColumnId = dto.ColumnId,
-                OwnerId = UserId!.Value,
+                OwnerId = UserId!,
                 Name = dto.Name,
                 Description = dto.Description,
                 Text = dto.Text,
@@ -175,7 +175,7 @@ namespace neco_board_ce.Controllers.API
 
             if(result.Success)
             {
-                await _notifier.TaskCreated(CurrentProjectId!.Value, dto.ColumnId);
+                await _notifier.TaskCreated(CurrentProjectId!, dto.ColumnId);
                 return Ok();
             }
             return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Unknown error" });
@@ -204,17 +204,17 @@ namespace neco_board_ce.Controllers.API
         /// <response code="400">Repository or database operation failed. Response body contains the error message.</response>
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller does not have VIEWER role in the project and is not a workspace administrator.</response>
-        [HttpPut("{taskId:guid}", Name = "UpdateTask")]
+        [HttpPut("{taskId}", Name = "UpdateTask")]
         [ProjectAccess(ProjectRole.VIEWER)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> Update(Guid taskId, [FromBody] TaskColumnRequest dto)
+        public async Task<IActionResult> Update(string taskId, [FromBody] TaskColumnRequest dto)
         {
             var task = new ColumnTask
             {
-                OwnerId = UserId!.Value,
+                OwnerId = UserId!,
                 Name = dto.Name,
                 Description = dto.Description,
                 Text = dto.Text,
@@ -223,7 +223,7 @@ namespace neco_board_ce.Controllers.API
 
             if (result.Success)
             {
-                await _notifier.TaskUpdated(CurrentProjectId!.Value, taskId);
+                await _notifier.TaskUpdated(CurrentProjectId!, taskId);
                 return Ok();
             }
             return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Unknown error" });
@@ -256,19 +256,19 @@ namespace neco_board_ce.Controllers.API
         /// <response code="400">Repository or database operation failed. Response body contains the error message.</response>
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller does not have VIEWER role in the project and is not a workspace administrator.</response>
-        [HttpPatch("{taskId:guid}/column", Name = "MoveTaskToColumn")]
+        [HttpPatch("{taskId}/column", Name = "MoveTaskToColumn")]
         [ProjectAccess(ProjectRole.VIEWER)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> UpdateColumn(Guid taskId, [FromBody] EditTaskColumnRequest dto)
+        public async Task<IActionResult> UpdateColumn(string taskId, [FromBody] EditTaskColumnRequest dto)
         {
             var result = await _repository.MoveToColumn(taskId, dto.ColumnId);
 
             if (result.Success)
             {
-                await _notifier.TaskColumnUpdated(CurrentProjectId!.Value, Guid.Parse(result.Message!), dto.ColumnId);
+                await _notifier.TaskColumnUpdated(CurrentProjectId!, result.Message!, dto.ColumnId);
                 return Ok();
             }
             return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Unknown error" });
@@ -300,19 +300,19 @@ namespace neco_board_ce.Controllers.API
         /// <response code="400">Repository or database operation failed. Response body contains the error message.</response>
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller does not have VIEWER role in the project and is not a workspace administrator.</response>
-        [HttpDelete("{taskId:guid}", Name = "DeleteTask")]
+        [HttpDelete("{taskId}", Name = "DeleteTask")]
         [ProjectAccess(ProjectRole.VIEWER)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> DeleteTask(Guid projectId, Guid taskId)
+        public async Task<IActionResult> DeleteTask(string projectId, string taskId)
         {
             var result = await _repository.Delete(taskId);
 
             if (result.Success)
             {
-                await _notifier.TaskDelete(CurrentProjectId!.Value, Guid.Parse(result.Message!), taskId);
+                await _notifier.TaskDelete(CurrentProjectId!, result.Message!, taskId);
                 return Ok();
             }
             return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Unknown error" });

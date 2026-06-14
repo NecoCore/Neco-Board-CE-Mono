@@ -8,8 +8,7 @@ namespace neco_board_ce.Models.DTO.Validations
         public UserProjectRequestValidator()
         {
             RuleFor(x => x.Id)
-                .NotEmpty().WithMessage("User ID is required.")
-                .NotEqual(Guid.Empty).WithMessage("User ID cannot be empty.");
+                .NotEmpty().WithMessage("User ID is required.");
 
             RuleFor(x => x.Role)
                 .IsInEnum().WithMessage("Invalid project role.");

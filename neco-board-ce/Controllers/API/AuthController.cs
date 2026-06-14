@@ -198,7 +198,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public IActionResult Me() => Ok(new MeResponse
         {
-            Id = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!),
+            Id = User.FindFirstValue(ClaimTypes.NameIdentifier)!,
             Login = User.FindFirstValue(ClaimTypes.Name)!,
             Role = User.FindFirstValue(ClaimTypes.Role)!,
             Name = User.FindFirstValue("name")!,

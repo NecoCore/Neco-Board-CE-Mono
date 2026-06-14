@@ -19,38 +19,34 @@ namespace neco_board_ce.Attributes.ProjectAccessAttribute
         protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, ProjectAccessRequirement requirement)
         {
             var httpContext = _contextAccessor.HttpContext;
-            var userIdStr = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(userIdStr, out var userId)) return;
+            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             var routeData = httpContext?.GetRouteData();
-            
-            var taskIdStr = routeData?.Values["taskId"]?.ToString();
-            var columnIdStr = routeData?.Values["columnId"]?.ToString();
-            var projectIdStr = routeData?.Values["projectId"]?.ToString() ?? routeData?.Values["id"]?.ToString();
-
-            Guid? taskId = Guid.TryParse(taskIdStr, out var tId) ? tId : null;
-            Guid? columnId = Guid.TryParse(columnIdStr, out var cId) ? cId : null;
-            Guid? projectId = Guid.TryParse(projectIdStr, out var pId) ? pId : null;
+            var taskId = routeData?.Values["taskId"]?.ToString();
+            var columnId = routeData?.Values["columnId"]?.ToString();
+            var projectId = routeData?.Values["projectId"]?.ToString() ?? routeData?.Values["id"]?.ToString();
 
             CheckResult result = new() { Result = false };
 
-            if (taskId.HasValue)
+            if (string.IsNullOrEmpty(userId)) return;
+
+            if (!string.IsNullOrEmpty(taskId))
             {
                 result = requirement.Role.HasValue ?
-                    await _userAccess.HasAccessToTask(userId, taskId.Value, requirement.Role.Value) :
-                    await _userAccess.HasAccessToTask(userId, taskId.Value);
+                    await _userAccess.HasAccessToTask(userId, taskId, requirement.Role.Value) :
+                    await _userAccess.HasAccessToTask(userId, taskId);
             }
-            else if (columnId.HasValue)
+            else if (!string.IsNullOrEmpty(columnId))
             {
                 result = requirement.Role.HasValue ?
-                    await _userAccess.HasAccessToColumn(userId, columnId.Value, requirement.Role.Value) :
-                    await _userAccess.HasAccessToColumn(userId, columnId.Value);
+                    await _userAccess.HasAccessToColumn(userId, columnId, requirement.Role.Value) :
+                    await _userAccess.HasAccessToColumn(userId, columnId);
             }
-            else if (projectId.HasValue)
+            else if (!string.IsNullOrEmpty(projectId))
             {
                 result = requirement.Role.HasValue ?
-                    await _userAccess.HasAccessToProject(userId, projectId.Value, requirement.Role.Value) :
-                    await _userAccess.HasAccessToProject(userId, projectId.Value);
+                    await _userAccess.HasAccessToProject(userId, projectId, requirement.Role.Value) :
+                    await _userAccess.HasAccessToProject(userId, projectId);
             }
 
             var userGlobalRole = context.User.FindFirstValue(ClaimTypes.Role);

@@ -17,7 +17,7 @@ namespace neco_board_ce.Repositories.Tables
             _logger = logger;
         }
 
-        public async Task<RepositoryResult<List<UserProjectRole>>> GetByProjectId(Guid projectId)
+        public async Task<RepositoryResult<List<UserProjectRole>>> GetByProjectId(string projectId)
         {
             _logger.LogDebug("Fetching members for project ID: {ProjectId} from the database.", projectId);
             try
@@ -39,7 +39,7 @@ namespace neco_board_ce.Repositories.Tables
             }
         }
 
-        public async Task<RepositoryResult<List<UserProjectRole>>> GetByUserId(Guid userId)
+        public async Task<RepositoryResult<List<UserProjectRole>>> GetByUserId(string userId)
         {
             _logger.LogDebug("Fetching project memberships for user ID: {UserId} from the database.", userId);
             try
@@ -61,7 +61,7 @@ namespace neco_board_ce.Repositories.Tables
             }
         }
 
-        public async Task<RepositoryResult<UserProjectRole?>> GetByUserAndProject(Guid userId, Guid projectId)
+        public async Task<RepositoryResult<UserProjectRole?>> GetByUserAndProject(string userId, string projectId)
         {
             _logger.LogDebug("Fetching role for user ID: {UserId} in project ID: {ProjectId}.", userId, projectId);
             try
@@ -81,7 +81,7 @@ namespace neco_board_ce.Repositories.Tables
             }
         }
 
-        public async Task<RepositoryResult<bool>> AddToProject(Guid userId, Guid projectId, ProjectRole role)
+        public async Task<RepositoryResult<bool>> AddToProject(string userId, string projectId, ProjectRole role)
         {
             _logger.LogDebug("Adding user ID: {UserId} to project ID: {ProjectId} with role: {Role}.", userId, projectId, role);
 
@@ -116,7 +116,7 @@ namespace neco_board_ce.Repositories.Tables
             return new RepositoryResult<bool> { Success = result, Message = result ? string.Empty : "Failed to add user to project." };
         }
 
-        public async Task<RepositoryResult<bool>> UpdateRole(Guid userId, Guid projectId, ProjectRole newRole)
+        public async Task<RepositoryResult<bool>> UpdateRole(string userId, string projectId, ProjectRole newRole)
         {
             _logger.LogDebug("Updating role of user ID: {UserId} in project ID: {ProjectId} to {Role}.", userId, projectId, newRole);
 
@@ -133,7 +133,7 @@ namespace neco_board_ce.Repositories.Tables
             return new RepositoryResult<bool> { Success = result, Message = result ? string.Empty : "Failed to update role." };
         }
 
-        public async Task<RepositoryResult<bool>> RemoveFromProject(Guid userId, Guid projectId)
+        public async Task<RepositoryResult<bool>> RemoveFromProject(string userId, string projectId)
         {
             _logger.LogDebug("Removing user ID: {UserId} from project ID: {ProjectId} in the database.", userId, projectId);
 

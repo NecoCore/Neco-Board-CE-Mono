@@ -115,15 +115,15 @@ namespace neco_board_ce.Controllers.API
         /// <response code="403">The caller is not a project member and is not a workspace administrator.</response>
         /// <response code="404">No project found for the provided identifier.</response>
         /// <response code="500">Repository or infrastructure failure. Response body contains the error description.</response>
-        [HttpGet("{id:guid}", Name = "GetProjectById")]
+        [HttpGet("{id}", Name = "GetProjectById")]
         [ProducesResponseType(typeof(ProjectDetailResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetProjectById(Guid id)
+        public async Task<IActionResult> GetProjectById(string id)
         {
-            var accessResult = await _userAccess.HasAccessToProject(UserId!.Value, id);
+            var accessResult = await _userAccess.HasAccessToProject(UserId!, id);
             if (!accessResult.Result && !IsWorkspaceAdmin()) return Forbid();
 
             var result = await _repository.GetById(id);
@@ -173,13 +173,13 @@ namespace neco_board_ce.Controllers.API
         {
             var project = new Project
             {
-                OwnerId = UserId!.Value,
+                OwnerId = UserId!,
                 Name = dto.Name,
                 Description = dto.Description,
             };
 
             var createdResult = await _repository.Create(project);
-            var addedResult = await _userProjectReposirory.AddToProject(UserId!.Value, project.Id, Models.Enums.ProjectRole.OWNER);
+            var addedResult = await _userProjectReposirory.AddToProject(UserId!, project.Id, Models.Enums.ProjectRole.OWNER);
 
             if(!createdResult.Success)
             {
@@ -219,20 +219,19 @@ namespace neco_board_ce.Controllers.API
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller does not hold the ADMIN or OWNER role.</response>
         /// <response code="500">Failed to persist the update. Response body contains the error description.</response>
-        [HttpPut("{id:guid}", Name = "UpdateProject")]
+        [HttpPut("{id}", Name = "UpdateProject")]
         [Authorize(Roles = "ADMIN,OWNER")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> UpdateProject(Guid id, [FromBody] ProjectUpdateRequest dto)
+        public async Task<IActionResult> UpdateProject(string id, [FromBody] ProjectUpdateRequest dto)
         {
             var project = new Project
             {
                 Name = dto.Name,
                 Description = dto.Description,
-                IsArchived = dto.IsArchived,
-                OwnerId = dto.OwnerId ?? Guid.Empty
+                OwnerId = dto.OwnerId ?? ""
             };
 
             var result = await _repository.Update(id, project);
@@ -270,13 +269,13 @@ namespace neco_board_ce.Controllers.API
         /// <response code="401">The request is not authenticated.</response>
         /// <response code="403">The caller does not hold the ADMIN or OWNER role.</response>
         /// <response code="500">Failed to delete the project. Response body contains the error description.</response>
-        [HttpDelete("{id:guid}", Name = "DeleteProject")]
+        [HttpDelete("{id}", Name = "DeleteProject")]
         [Authorize(Roles = "ADMIN,OWNER")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> DeleteProject(Guid id)
+        public async Task<IActionResult> DeleteProject(string id)
         {
             var result = await _repository.Delete(id);
             if (result.Success)
