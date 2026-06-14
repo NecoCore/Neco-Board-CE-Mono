@@ -2,6 +2,6 @@
 {
     public class EditTaskColumnRequest
     {
-        public string ColumnId { get; set; } = string.Empty;
+        public Guid ColumnId { get; set; }
     }
 }
