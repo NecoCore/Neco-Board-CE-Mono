@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using neco_board_ce.Models.DTO.Request.Auth;
 using neco_board_ce.Models.DTO.Request.Projects;
@@ -32,14 +33,14 @@ namespace neco_board_ce.Tests.Integration
             var db = scope.ServiceProvider.GetRequiredService<Data.AppDbContext>();
             await db.Database.EnsureCreatedAsync();
 
-            // Create a seed admin to allow registration of new users
+            // Create a seed admin to allow registration of new users and role management
             var seedAdmin = new Account
             {
                 Id = Guid.NewGuid(),
                 Name = "Seed Admin",
                 Login = "seed_admin",
                 Password = BCrypt.Net.BCrypt.HashPassword("admin_pass"),
-                Role = WorkspaceRoles.ADMIN
+                Role = WorkspaceRoles.OWNER // Must be OWNER to edit roles
             };
             db.Accounts.Add(seedAdmin);
             await db.SaveChangesAsync();
@@ -55,7 +56,7 @@ namespace neco_board_ce.Tests.Integration
             _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminAuthData!.AccessToken);
 
             // --- 2. Register New User ---
-            var newUserLogin = "new_user_" + Guid.NewGuid();
+            var newUserLogin = "user_" + Guid.NewGuid().ToString("N");
             var newUserPass = "SecurePass123!";
             var registerRequest = new RegisterRequest
             {
@@ -65,10 +66,13 @@ namespace neco_board_ce.Tests.Integration
                 ConfirmPassword = newUserPass
             };
             var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerRequest);
-            registerResponse.EnsureSuccessStatusCode();
+            if (!registerResponse.IsSuccessStatusCode)
+            {
+                var regError = await registerResponse.Content.ReadAsStringAsync();
+                throw new Exception($"Registration failed: {regError}");
+            }
 
-            // --- 3. Login as New User ---
-            // Clear Admin header
+            // --- 3. Login as New User to get their ID ---
             _client.DefaultRequestHeaders.Authorization = null;
             var userLoginResponse = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest 
             { 
@@ -79,14 +83,41 @@ namespace neco_board_ce.Tests.Integration
             var userAuthData = await userLoginResponse.Content.ReadFromJsonAsync<RefreshResponse>();
             _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", userAuthData!.AccessToken);
 
-            // --- 4. Create Project as New User ---
+            var meResponse = await _client.GetAsync("/api/auth/me");
+            meResponse.EnsureSuccessStatusCode();
+            var meData = await meResponse.Content.ReadFromJsonAsync<neco_board_ce.Models.DTO.Response.Auth.MeResponse>();
+            var newUserId = meData!.Id;
+
+            // --- 3.5 Promote New User to ADMIN (USER cannot create projects) ---
+            _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminAuthData!.AccessToken);
+            var promoteResponse = await _client.PatchAsJsonAsync($"/api/users/role/{newUserId}", new neco_board_ce.Models.DTO.Request.Users.EditWorkspaceRoleRequest
+            {
+                Role = WorkspaceRoles.ADMIN
+            });
+            promoteResponse.EnsureSuccessStatusCode();
+
+            // Re-login as New User to get fresh token with ADMIN role
+            userLoginResponse = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest 
+            { 
+                Login = newUserLogin, 
+                Password = newUserPass 
+            });
+            userLoginResponse.EnsureSuccessStatusCode();
+            userAuthData = await userLoginResponse.Content.ReadFromJsonAsync<RefreshResponse>();
+            _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", userAuthData!.AccessToken);
+
+            // --- 4. Create Project as New User (now ADMIN) ---
             var projectRequest = new ProjectRequest
             {
                 Name = "Workflow Project",
                 Description = "Created during E2E test"
             };
             var createProjectResponse = await _client.PostAsJsonAsync("/api/project", projectRequest);
-            createProjectResponse.EnsureSuccessStatusCode();
+            if (!createProjectResponse.IsSuccessStatusCode)
+            {
+                var projError = await createProjectResponse.Content.ReadAsStringAsync();
+                throw new Exception($"Project creation failed: {projError}");
+            }
             var projectData = await createProjectResponse.Content.ReadFromJsonAsync<CreateProjectRequest>();
             var projectId = projectData!.ProjectId;
 
