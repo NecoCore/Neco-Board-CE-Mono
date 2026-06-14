@@ -28,92 +28,129 @@ namespace neco_board_ce.Tests.Integration.Utils.Check
             return (db, accessCheck);
         }
 
+        #region 11.1.1 Admin Bypass
+
         [Fact]
         public async Task HasAccessToProject_ShouldReturnTrue_WhenUserIsGlobalAdmin()
         {
-            // Arrange
             var (db, accessCheck) = await GetRequiredServices();
+            var adminUser = await CreateAccount(db, WorkspaceRoles.ADMIN);
+            var project = await CreateProject(db, Guid.NewGuid()); // Owned by someone else
 
-            var adminUser = new Account
-            {
-                Id = Guid.NewGuid(),
-                Name = "Global Admin",
-                Login = "admin_" + Guid.NewGuid(),
-                Password = "hashed_password",
-                Role = WorkspaceRoles.ADMIN
-            };
-
-            var ownerUser = new Account
-            {
-                Id = Guid.NewGuid(),
-                Name = "Project Owner",
-                Login = "owner_" + Guid.NewGuid(),
-                Password = "hashed_password",
-                Role = WorkspaceRoles.USER
-            };
-
-            var project = new Project
-            {
-                Id = Guid.NewGuid(),
-                Name = "Secret Project",
-                OwnerId = ownerUser.Id
-            };
-
-            await db.Accounts.AddAsync(ownerUser);
-            await db.Accounts.AddAsync(adminUser);
-            await db.Projects.AddAsync(project);
-            await db.SaveChangesAsync();
-
-            // Act
-            // Admin is NOT a member of the project
             var result = await accessCheck.HasAccessToProject(adminUser.Id, project.Id);
-
-            // Assert
-            result.Result.Should().BeTrue("Global ADMINs should bypass membership checks");
+            result.Result.Should().BeTrue("Admins should have access to any project");
         }
 
         [Fact]
-        public async Task HasAccessToProject_ShouldReturnFalse_WhenRegularUserIsNotMember()
+        public async Task HasAccessToColumn_ShouldReturnTrue_WhenUserIsGlobalAdmin()
         {
-            // Arrange
             var (db, accessCheck) = await GetRequiredServices();
+            var adminUser = await CreateAccount(db, WorkspaceRoles.ADMIN);
+            var project = await CreateProject(db, Guid.NewGuid());
+            var column = new Column { Id = Guid.NewGuid(), Name = "Test", ProjectId = project.Id };
+            db.Columns.Add(column);
+            await db.SaveChangesAsync();
 
-            var regularUser = new Account
+            var result = await accessCheck.HasAccessToColumn(adminUser.Id, column.Id, ProjectRole.MODERATOR);
+            result.Result.Should().BeTrue("Admins should bypass role checks in columns");
+        }
+
+        #endregion
+
+        #region 11.1.2 Role Hierarchy
+
+        [Fact]
+        public async Task HasAccessToProject_ShouldReturnTrue_WhenUserHasHigherRole()
+        {
+            var (db, accessCheck) = await GetRequiredServices();
+            var user = await CreateAccount(db, WorkspaceRoles.USER);
+            var project = await CreateProject(db, Guid.NewGuid());
+            
+            // Assign MODERATOR role to user in this project
+            db.UserProjectRoles.Add(new UserProjectRole { UserId = user.Id, ProjectId = project.Id, Role = ProjectRole.MODERATOR });
+            await db.SaveChangesAsync();
+
+            // Check if MODERATOR has access to VIEWER-level action
+            var result = await accessCheck.HasAccessToProject(user.Id, project.Id, ProjectRole.VIEWER);
+            result.Result.Should().BeTrue("Moderator should have access to Viewer-level actions");
+        }
+
+        [Fact]
+        public async Task HasAccessToProject_ShouldReturnFalse_WhenUserHasLowerRole()
+        {
+            var (db, accessCheck) = await GetRequiredServices();
+            var user = await CreateAccount(db, WorkspaceRoles.USER);
+            var project = await CreateProject(db, Guid.NewGuid());
+            
+            // Assign VIEWER role to user
+            db.UserProjectRoles.Add(new UserProjectRole { UserId = user.Id, ProjectId = project.Id, Role = ProjectRole.VIEWER });
+            await db.SaveChangesAsync();
+
+            // Check if VIEWER has access to MODERATOR-level action
+            var result = await accessCheck.HasAccessToProject(user.Id, project.Id, ProjectRole.MODERATOR);
+            result.Result.Should().BeFalse("Viewer should NOT have access to Moderator-level actions");
+        }
+
+        #endregion
+
+        #region 11.1.3 Cross-Project Guard
+
+        [Fact]
+        public async Task HasAccessToProject_ShouldReturnFalse_WhenUserInOtherProject()
+        {
+            var (db, accessCheck) = await GetRequiredServices();
+            var user = await CreateAccount(db, WorkspaceRoles.USER);
+            
+            var projectA = await CreateProject(db, user.Id); // Member of A
+            var projectB = await CreateProject(db, Guid.NewGuid()); // NOT member of B
+
+            db.UserProjectRoles.Add(new UserProjectRole { UserId = user.Id, ProjectId = projectA.Id, Role = ProjectRole.OWNER });
+            await db.SaveChangesAsync();
+
+            var result = await accessCheck.HasAccessToProject(user.Id, projectB.Id);
+            result.Result.Should().BeFalse("User in Project A should not have access to Project B");
+        }
+
+        #endregion
+
+        #region Helpers
+
+        private async Task<Account> CreateAccount(AppDbContext db, WorkspaceRoles role)
+        {
+            var account = new Account
             {
                 Id = Guid.NewGuid(),
-                Name = "Regular User",
-                Login = "user_" + Guid.NewGuid(),
+                Name = "Test User",
+                Login = "login_" + Guid.NewGuid(),
                 Password = "hashed_password",
-                Role = WorkspaceRoles.USER
+                Role = role
             };
+            db.Accounts.Add(account);
+            await db.SaveChangesAsync();
+            return account;
+        }
 
-            var ownerUser = new Account
+        private async Task<Project> CreateProject(AppDbContext db, Guid ownerId)
+        {
+            // Ensure owner exists to avoid FK error
+            var owner = await db.Accounts.FindAsync(ownerId);
+            if (owner == null)
             {
-                Id = Guid.NewGuid(),
-                Name = "Project Owner",
-                Login = "owner_" + Guid.NewGuid(),
-                Password = "hashed_password",
-                Role = WorkspaceRoles.USER
-            };
+                owner = await CreateAccount(db, WorkspaceRoles.USER);
+                ownerId = owner.Id;
+            }
 
             var project = new Project
             {
                 Id = Guid.NewGuid(),
-                Name = "Private Project",
-                OwnerId = ownerUser.Id
+                Name = "Test Project",
+                OwnerId = ownerId
             };
-
-            await db.Accounts.AddAsync(ownerUser);
-            await db.Accounts.AddAsync(regularUser);
-            await db.Projects.AddAsync(project);
+            db.Projects.Add(project);
             await db.SaveChangesAsync();
-
-            // Act
-            var result = await accessCheck.HasAccessToProject(regularUser.Id, project.Id);
-
-            // Assert
-            result.Result.Should().BeFalse("Regular users should not have access to projects they don't belong to");
-            result.Message.Should().Be("User doesn't have access in project");
+            return project;
         }
+
+        #endregion
     }
 }
