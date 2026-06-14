@@ -10,6 +10,7 @@ using neco_board_ce.Models.DTO.Response.Task;
 using neco_board_ce.Models.Entity;
 using neco_board_ce.Models.Enums;
 using neco_board_ce.Repositories.Tables;
+using neco_board_ce.Services.Logs;
 using neco_board_ce.Utils.Check;
 using neco_board_ce.Utils.Controllers;
 
@@ -36,6 +37,7 @@ namespace neco_board_ce.Controllers.API
         private readonly ColumnTaskRepository _repository;
         private readonly TaskUserRepository _taskUserRepository;
         private readonly UserAccessCheck _userAccess;
+        private readonly AuditService _auditService;
         private readonly IRealtimeNotifier _notifier;
 
         public TaskInfoController(
@@ -43,12 +45,14 @@ namespace neco_board_ce.Controllers.API
             UserAccessCheck userAccess, 
             ColumnTaskRepository repository, 
             TaskUserRepository taskUserRepository, 
+            AuditService auditService,
             IRealtimeNotifier notifier)
         {
             _logger = logger;
             _repository = repository;
             _userAccess = userAccess;
             _taskUserRepository = taskUserRepository;
+            _auditService = auditService;
             _notifier = notifier;
         }
 
@@ -87,6 +91,7 @@ namespace neco_board_ce.Controllers.API
 
             if (result.Success)
             {
+                await _auditService.TaskLog(CurrentProjectId!.Value, UserId!.Value, LogType.EDITED, "Task status updated", $"TaskId: {taskId}, New Status: {dto.Status}");
                 await _notifier.TaskStatusUpdated(CurrentProjectId!.Value, taskId, result.Data, dto.Status);
                 return Ok();
             }
@@ -129,6 +134,7 @@ namespace neco_board_ce.Controllers.API
 
             if (result.Success)
             {
+                await _auditService.TaskLog(CurrentProjectId!.Value, UserId!.Value, LogType.EDITED, "Task priority updated", $"TaskId: {taskId}, New Priority: {dto.Priority}");
                 await _notifier.TaskPriorityUpdated(CurrentProjectId!.Value, taskId, result.Data, dto.Priority);
                 return Ok();
             }
@@ -231,6 +237,7 @@ namespace neco_board_ce.Controllers.API
 
             if (result.Success)
             {
+                await _auditService.TaskLog(CurrentProjectId!.Value, UserId!.Value, LogType.EDITED, "User assigned to task", $"TaskId: {taskId}, Target UserId: {targetUserId}");
                 await _notifier.TaskAddUser(taskId);
                 return Ok();
             }
@@ -295,6 +302,7 @@ namespace neco_board_ce.Controllers.API
 
             if (result.Success)
             {
+                await _auditService.TaskLog(CurrentProjectId!.Value, UserId!.Value, LogType.EDITED, "User unassigned from task", $"TaskId: {taskId}, Target UserId: {targetUserId}");
                 await _notifier.TaskRemoveUser(taskId, targetUserId);
                 return Ok();
             }
