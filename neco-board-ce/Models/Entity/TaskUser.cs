@@ -9,24 +9,24 @@ namespace neco_board_ce.Models.Entity
     {
         [Key]
         [Column("id")]
-        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         [Required]
         [Column("task_id")]
-        public string TaskId { get; set; }
+        public Guid TaskId { get; set; }
 
         [ForeignKey(nameof(TaskId))]
         [InverseProperty(nameof(ColumnTask.Users))]
         [JsonIgnore]
-        public ColumnTask Task { get; set; }
+        public ColumnTask Task { get; set; } = null!;
 
         [Required]
         [Column("user_id")]
-        public string UserId { get; set; }
+        public Guid UserId { get; set; }
 
         [ForeignKey(nameof(UserId))]
         [InverseProperty(nameof(Account.Tasks))]
         [JsonIgnore]
-        public Account User { get; set; }
+        public Account User { get; set; } = null!;
     }
 }
