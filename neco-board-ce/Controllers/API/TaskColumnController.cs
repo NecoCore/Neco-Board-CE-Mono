@@ -8,6 +8,7 @@ using neco_board_ce.Models.DTO.Response.Task;
 using neco_board_ce.Models.Entity;
 using neco_board_ce.Models.Enums;
 using neco_board_ce.Repositories.Tables;
+using neco_board_ce.Services.Logs;
 using neco_board_ce.Utils.Check;
 using neco_board_ce.Utils.Controllers;
 
@@ -31,14 +32,17 @@ namespace neco_board_ce.Controllers.API
     {
         private readonly ILogger<TaskColumnController> _logger;
         private readonly ColumnTaskRepository _repository;
+        private readonly AuditService _auditService;
         private readonly IRealtimeNotifier _notifier;
 
         public TaskColumnController(
             ILogger<TaskColumnController> logger, 
+            AuditService auditService,
             ColumnTaskRepository repository, 
             IRealtimeNotifier notifier)
         {
             _logger = logger;
+            _auditService = auditService;
             _repository = repository;
             _notifier = notifier;
         }
@@ -175,6 +179,7 @@ namespace neco_board_ce.Controllers.API
 
             if(result.Success)
             {
+                await _auditService.TaskLog(CurrentProjectId!.Value, UserId!.Value, LogType.CREATED, "Task created", $"Name: {task.Name}, ColumnId: {task.ColumnId}");
                 await _notifier.TaskCreated(CurrentProjectId!.Value, dto.ColumnId);
                 return Ok();
             }
@@ -223,6 +228,7 @@ namespace neco_board_ce.Controllers.API
 
             if (result.Success)
             {
+                await _auditService.TaskLog(CurrentProjectId!.Value, UserId!.Value, LogType.EDITED, "Task updated", $"TaskId: {taskId}, New Name: {task.Name}");
                 await _notifier.TaskUpdated(CurrentProjectId!.Value, taskId);
                 return Ok();
             }
@@ -237,15 +243,11 @@ namespace neco_board_ce.Controllers.API
         /// Requires at least <see cref="ProjectRole.VIEWER"/> membership in the task's
         /// parent project, or workspace administrator privileges.
         /// On success, emits the <c>TaskColumnUpdated</c> SignalR event to the project group
-        /// identified by <paramref name="projectId"/>, carrying both the previous and the new
+        /// identified by projectId, carrying both the previous and the new
         /// column identifiers.
         /// <br/><br/>
-        /// <paramref name="projectId"/> and <paramref name="columnId"/> are passed
-        /// as query string parameters (not part of the route template).
         /// </remarks>
-        /// <param name="projectId">The unique identifier of the parent project (query parameter), used to target the SignalR group.</param>
         /// <param name="taskId">The unique identifier of the task to move (route parameter).</param>
-        /// <param name="columnId">The current column identifier of the task (query parameter), sent as <c>OldColumnId</c> in the SignalR payload.</param>
         /// <param name="dto">Request body containing the target column ID (<c>ColumnId</c>).</param>
         /// <returns>
         /// <see cref="OkResult"/> on success;
@@ -268,6 +270,7 @@ namespace neco_board_ce.Controllers.API
 
             if (result.Success)
             {
+                await _auditService.TaskLog(CurrentProjectId!.Value, UserId!.Value, LogType.EDITED, "Task moved", $"TaskId: {taskId}, New ColumnId: {dto.ColumnId}");
                 await _notifier.TaskColumnUpdated(CurrentProjectId!.Value, Guid.Parse(result.Message!), dto.ColumnId);
                 return Ok();
             }
@@ -312,6 +315,7 @@ namespace neco_board_ce.Controllers.API
 
             if (result.Success)
             {
+                await _auditService.TaskLog(CurrentProjectId!.Value, UserId!.Value, LogType.DELETED, "Task deleted", $"TaskId: {taskId}");
                 await _notifier.TaskDelete(CurrentProjectId!.Value, Guid.Parse(result.Message!), taskId);
                 return Ok();
             }
