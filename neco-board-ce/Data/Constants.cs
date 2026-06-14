@@ -2,7 +2,7 @@ namespace neco_board_ce.Data
 {
     public static class Constants
     {
-        public static readonly string VERSION = "0.4.0-beta";
+        public static readonly string VERSION = "0.5.0-beta";
         public static readonly string PROJECT_NAME = "Neco Board CE";
 
         public static class Roles
