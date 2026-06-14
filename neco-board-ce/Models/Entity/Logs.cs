@@ -38,7 +38,6 @@ namespace neco_board_ce.Models.Entity
         public Guid? NewUserId { get; set; }
 
         [ForeignKey(nameof(NewUserId))]
-        [InverseProperty(nameof(Account.Logs))]
         [JsonIgnore]
         public Account? NewUser { get; set; }
 
