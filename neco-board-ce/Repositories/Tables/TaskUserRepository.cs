@@ -16,7 +16,7 @@ namespace neco_board_ce.Repositories.Tables
             _logger = logger;
         }
 
-        public async Task<RepositoryResult<List<TaskUser>>> GetByTaskId(string taskId)
+        public async Task<RepositoryResult<List<TaskUser>>> GetByTaskId(Guid taskId)
         {
             _logger.LogDebug("Fetching users for task ID: {TaskId} from the database.", taskId);
             try
@@ -38,7 +38,7 @@ namespace neco_board_ce.Repositories.Tables
             }
         }
 
-        public async Task<RepositoryResult<List<TaskUser>>> GetByUserId(string userId)
+        public async Task<RepositoryResult<List<TaskUser>>> GetByUserId(Guid userId)
         {
             _logger.LogDebug("Fetching tasks for user ID: {UserId} from the database.", userId);
             try
@@ -60,7 +60,7 @@ namespace neco_board_ce.Repositories.Tables
             }
         }
 
-        public async Task<RepositoryResult<List<TaskUser>>> GetFullByUserId(string userId)
+        public async Task<RepositoryResult<List<TaskUser>>> GetFullByUserId(Guid userId)
         {
             _logger.LogDebug("Fetching tasks for user ID: {UserId} from the database.", userId);
             try
@@ -85,7 +85,7 @@ namespace neco_board_ce.Repositories.Tables
             }
         }
 
-        public async Task<RepositoryResult<bool>> AddUser(string taskId, string userId)
+        public async Task<RepositoryResult<bool>> AddUser(Guid taskId, Guid userId)
         {
             _logger.LogDebug("Adding user ID: {UserId} to task ID: {TaskId} in the database.", userId, taskId);
 
@@ -115,7 +115,7 @@ namespace neco_board_ce.Repositories.Tables
             return new RepositoryResult<bool> { Success = result, Message = result ? string.Empty : "Failed to add user." };
         }
 
-        public async Task<RepositoryResult<bool>> RemoveUser(string taskId, string userId)
+        public async Task<RepositoryResult<bool>> RemoveUser(Guid taskId, Guid userId)
         {
             _logger.LogDebug("Removing user ID: {UserId} from task ID: {TaskId} in the database.", userId, taskId);
 

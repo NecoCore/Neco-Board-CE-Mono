@@ -5,15 +5,15 @@ namespace neco_board_ce.Models.DTO.Response.Task
 {
     public class TaskDetailResponse
     {
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
         public string Text { get; set; } = string.Empty;
         public TaskPriority Priority { get; set; }
         public ColumnTaskStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
-        public string ColumnId { get; set; } = string.Empty;
-        public string OwnerId { get; set; } = string.Empty;
+        public Guid ColumnId { get; set; }
+        public Guid OwnerId { get; set; }
         public string OwnerName { get; set; } = string.Empty;
         
         public List<string> AssignedUserNames { get; set; } = [];

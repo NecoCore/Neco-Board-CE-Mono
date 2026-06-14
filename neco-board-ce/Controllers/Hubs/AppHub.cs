@@ -20,29 +20,29 @@ namespace neco_board_ce.Controllers.Hubs
             _userAccess = userAccess;
         }
 
-        public async Task JoinProject(string projectId)
+        public async Task JoinProject(Guid projectId)
         {
-            var userId = Context.UserIdentifier;
-            if (userId is null) return;
+            var userIdStr = Context.UserIdentifier;
+            if (userIdStr is null || !Guid.TryParse(userIdStr, out var userId)) return;
             var check = await _userAccess.HasAccessToProject(userId, projectId);
             if (!check.Result) throw new HubException("Access denied");
-            await Groups.AddToGroupAsync(Context.ConnectionId, HubGroups.Project(projectId));
+            await Groups.AddToGroupAsync(Context.ConnectionId, HubGroups.Project(projectId.ToString()));
         }
 
-        public Task LeaveProject(string projectId)
-            => Groups.RemoveFromGroupAsync(Context.ConnectionId, HubGroups.Project(projectId));
+        public Task LeaveProject(Guid projectId)
+            => Groups.RemoveFromGroupAsync(Context.ConnectionId, HubGroups.Project(projectId.ToString()));
 
-        public async Task JoinTask(string taskId)
+        public async Task JoinTask(Guid taskId)
         {
-            var userId = Context.UserIdentifier;
-            if (userId is null) return;
+            var userIdStr = Context.UserIdentifier;
+            if (userIdStr is null || !Guid.TryParse(userIdStr, out var userId)) return;
             var check = await _userAccess.HasAccessToTask(userId, taskId);
             if (!check.Result) throw new HubException("Access denied");
-            await Groups.AddToGroupAsync(Context.ConnectionId, HubGroups.Task(taskId));
+            await Groups.AddToGroupAsync(Context.ConnectionId, HubGroups.Task(taskId.ToString()));
         }
 
-        public Task LeaveTask(string taskId)
-            => Groups.RemoveFromGroupAsync(Context.ConnectionId, HubGroups.Task(taskId));
+        public Task LeaveTask(Guid taskId)
+            => Groups.RemoveFromGroupAsync(Context.ConnectionId, HubGroups.Task(taskId.ToString()));
 
         public override async Task OnConnectedAsync()
         {
@@ -83,7 +83,7 @@ namespace neco_board_ce.Controllers.Hubs
                 if(isNewUserOnline)
                 {
                     _logger.LogInformation("Notificate {userId} now is online", userId);
-                    await Clients.Others.UserConnected(userId);
+                    await Clients.Others.UserConnected(Guid.Parse(userId));
                 }
             } else
             {
@@ -119,7 +119,7 @@ namespace neco_board_ce.Controllers.Hubs
                     {
                         _logger.LogInformation("Notificate user {userId} now offline", userId);
                         _onlineUsers.TryRemove(userId, out _);
-                        await Clients.All.UserDisconnected(userId);
+                        await Clients.All.UserDisconnected(Guid.Parse(userId));
                     }
                 }
             } else

@@ -105,7 +105,7 @@ namespace neco_board_ce.Data
             await db.Database.MigrateAsync();
 
             string adminLogin = config["Admin:Username"] ?? "admin";
-            string adminPass = config["Admin:Password"] ?? "Admin123";
+            string adminPass = config["Admin:Password"] ?? "admin1";
 
             if (!db.Accounts.Any(a => a.Login == adminLogin))
             {

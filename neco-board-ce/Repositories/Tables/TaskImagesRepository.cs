@@ -41,7 +41,7 @@ namespace neco_board_ce.Repositories.Tables
             }
         }
 
-        public async Task<RepositoryResult<TaskImages?>> GetById(string id)
+        public async Task<RepositoryResult<TaskImages?>> GetById(Guid id)
         {
             _logger.LogDebug("Fetching task image with ID: {Id} from the database.", id);
             try
@@ -64,7 +64,7 @@ namespace neco_board_ce.Repositories.Tables
             }
         }
 
-        public async Task<RepositoryResult<List<TaskImages>>> GetByTaskId(string taskId)
+        public async Task<RepositoryResult<List<TaskImages>>> GetByTaskId(Guid taskId)
         {
             _logger.LogDebug("Fetching images for task ID: {TaskId} from the database.", taskId);
             try
@@ -95,7 +95,7 @@ namespace neco_board_ce.Repositories.Tables
             return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to create task image." };
         }
 
-        public async Task<RepositoryResult<bool>> Update(string id, TaskImages entity)
+        public async Task<RepositoryResult<bool>> Update(Guid id, TaskImages entity)
         {
             _logger.LogDebug("Updating task image with ID: {Id} in the database.", id);
             var existing = await _db.TaskImages.FindAsync(id);
@@ -113,7 +113,7 @@ namespace neco_board_ce.Repositories.Tables
             return new RepositoryResult<bool> { Success = saved, Message = saved ? string.Empty : "Failed to update task image." };
         }
 
-        public async Task<RepositoryResult<bool>> Delete(string id)
+        public async Task<RepositoryResult<bool>> Delete(Guid id)
         {
             _logger.LogDebug("Deleting task image with ID: {Id} from the database.", id);
             var existing = await _db.TaskImages.FindAsync(id);

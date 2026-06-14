@@ -28,7 +28,7 @@ namespace neco_board_ce.Controllers.API
     /// </remarks>
     [ApiController()]
     [Authorize]
-    [Route("api/tasks/{taskId}")]
+    [Route("api/tasks/{taskId:guid}")]
     [Tags("Task information")]
     public class TaskInfoController : UserAuth
     {
@@ -81,13 +81,13 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> UpdateStatus(string taskId, [FromBody] EditTaskStatusRequest dto)
+        public async Task<IActionResult> UpdateStatus(Guid taskId, [FromBody] EditTaskStatusRequest dto)
         {
             var result = await _repository.UpdateStatus(taskId, dto.Status);
 
             if (result.Success)
             {
-                await _notifier.TaskStatusUpdated(CurrentProjectId!, taskId, result.Data!, dto.Status);
+                await _notifier.TaskStatusUpdated(CurrentProjectId!.Value, taskId, result.Data, dto.Status);
                 return Ok();
             }
             _logger.LogError("Failed to update status in {taskId}: {error}", taskId, result.Message ?? "unknown error");
@@ -123,13 +123,13 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> UpdatePriority(string taskId, [FromBody] EditTaskPriorityRequest dto)
+        public async Task<IActionResult> UpdatePriority(Guid taskId, [FromBody] EditTaskPriorityRequest dto)
         {
             var result = await _repository.UpdatePriority(taskId, dto.Priority);
 
             if (result.Success)
             {
-                await _notifier.TaskPriorityUpdated(CurrentProjectId!, taskId, result.Data!, dto.Priority);
+                await _notifier.TaskPriorityUpdated(CurrentProjectId!.Value, taskId, result.Data, dto.Priority);
                 return Ok();
             }
             _logger.LogError("Failed to update priority in {taskId}: {error}", taskId, result.Message ?? "unknown error");
@@ -162,7 +162,7 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> GetUsers(string projectId, string taskId)
+        public async Task<IActionResult> GetUsers(Guid projectId, Guid taskId)
         {
             var users = await _taskUserRepository.GetByTaskId(taskId);
             if(!users.Success)
@@ -221,12 +221,12 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> AddUser(string taskId, [FromBody] AddUserInTaskRequest dto)
+        public async Task<IActionResult> AddUser(Guid taskId, [FromBody] AddUserInTaskRequest dto)
         {
-            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.USER);
+            var accessResult = await _userAccess.HasAccessToTask(UserId!.Value, taskId, ProjectRole.USER);
             if (!accessResult.Result && dto.UserId is not null) return Forbid();
 
-            string targetUserId = dto.UserId ?? UserId!;
+            Guid targetUserId = dto.UserId ?? UserId!.Value;
             var result = await _taskUserRepository.AddUser(taskId, targetUserId);
 
             if (result.Success)
@@ -285,12 +285,12 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(typeof(ErrorMessageResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> RemoveUser(string taskId, [FromBody] AddUserInTaskRequest dto)
+        public async Task<IActionResult> RemoveUser(Guid taskId, [FromBody] AddUserInTaskRequest dto)
         {
-            var accessResult = await _userAccess.HasAccessToTask(UserId!, taskId, ProjectRole.USER);
+            var accessResult = await _userAccess.HasAccessToTask(UserId!.Value, taskId, ProjectRole.USER);
             if (!accessResult.Result && dto.UserId is not null) return Forbid();
 
-            string targetUserId = dto.UserId ?? UserId!;
+            Guid targetUserId = dto.UserId ?? UserId!.Value;
             var result = await _taskUserRepository.RemoveUser(taskId, targetUserId);
 
             if (result.Success)

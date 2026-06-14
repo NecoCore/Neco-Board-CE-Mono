@@ -6,11 +6,23 @@ namespace neco_board_ce.Utils.Controllers
 {
     public class UserAuth : ControllerBase
     {
-        protected string? UserId =>
-            User.FindFirstValue(ClaimTypes.NameIdentifier);
+        protected Guid? UserId
+        {
+            get
+            {
+                var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                return id != null && Guid.TryParse(id, out var guid) ? guid : null;
+            }
+        }
 
-        protected string? CurrentProjectId =>
-            HttpContext.Items["ProjectId"]?.ToString();
+        protected Guid? CurrentProjectId
+        {
+            get
+            {
+                var id = HttpContext.Items["ProjectId"]?.ToString();
+                return id != null && Guid.TryParse(id, out var guid) ? guid : null;
+            }
+        }
 
         protected bool IsWorkspaceAdmin() => 
             User.FindFirstValue(ClaimTypes.Role) == WorkspaceRoles.ADMIN.ToString() || 
