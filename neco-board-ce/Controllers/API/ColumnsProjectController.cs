@@ -8,7 +8,7 @@ using neco_board_ce.Models.DTO.Response.Messages;
 using neco_board_ce.Models.Entity;
 using neco_board_ce.Models.Enums;
 using neco_board_ce.Repositories.Tables;
-using neco_board_ce.Utils.Check;
+using neco_board_ce.Services.Logs;
 using neco_board_ce.Utils.Controllers;
 
 namespace neco_board_ce.Controllers.API
@@ -32,16 +32,19 @@ namespace neco_board_ce.Controllers.API
     {
         private readonly ILogger<ColumnsProjectController> _logger;
         private readonly ColumnsRepository _repository;
+        private readonly AuditService _auditService;
         private readonly IRealtimeNotifier _notifier;
 
         public ColumnsProjectController(
             ILogger<ColumnsProjectController> logger,
+            AuditService auditService,
             ColumnsRepository repository,
             IRealtimeNotifier notifier
             )
         {
             _logger = logger;
             _repository = repository;
+            _auditService = auditService;
             _notifier = notifier;
         }
 
@@ -143,6 +146,7 @@ namespace neco_board_ce.Controllers.API
             var createResult = await _repository.Create(newColumn);
             if (createResult.Success)
             {
+                await _auditService.ColumnLog(projectId, UserId!.Value, LogType.CREATED, "Column created", $"Name: {newColumn.Name}");
                 await _notifier.ColumnCreated(projectId);
                 return NoContent();
             }
@@ -189,6 +193,7 @@ namespace neco_board_ce.Controllers.API
 
             if (updateResult.Success)
             {
+                await _auditService.ColumnLog(CurrentProjectId!.Value, UserId!.Value, LogType.EDITED, "Column updated", $"Id: {columnId}, New Name: {dto.Name}");
                 await _notifier.ColumnUpdated(CurrentProjectId!.Value, columnId, dto.Name);
                 return NoContent();
             }
@@ -232,6 +237,7 @@ namespace neco_board_ce.Controllers.API
             var result = await _repository.UpdateOrder(CurrentProjectId!.Value, columnId, queue);
             if (result.Success)
             {
+                await _auditService.ColumnLog(CurrentProjectId!.Value, UserId!.Value, LogType.EDITED, "Column order updated", $"Id: {columnId}, New Queue: {queue}");
                 await _notifier.ColumnOrderUpdated(CurrentProjectId!.Value);
                 return Ok();
             }
@@ -272,6 +278,7 @@ namespace neco_board_ce.Controllers.API
             var result = await _repository.Delete(columnId);
             if (result.Success)
             {
+                await _auditService.ColumnLog(CurrentProjectId!.Value, UserId!.Value, LogType.DELETED, "Column deleted", $"Id: {columnId}");
                 await _notifier.ColumnDelete(CurrentProjectId!.Value, columnId);
                 return NoContent();
             }

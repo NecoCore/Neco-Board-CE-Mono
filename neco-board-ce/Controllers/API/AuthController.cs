@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using neco_board_ce.Data;
 using neco_board_ce.Models.DTO.Request.Auth;
 using neco_board_ce.Models.DTO.Response.Auth;
 using neco_board_ce.Models.DTO.Response.Messages;
 using neco_board_ce.Services.Authentication;
+using neco_board_ce.Services.Logs;
 using System.Security.Claims;
 
 namespace neco_board_ce.Controllers.API
@@ -25,13 +27,15 @@ namespace neco_board_ce.Controllers.API
     public class AuthController : ControllerBase
     {
         private readonly AuthService _authService;
+        private readonly AuditService _auditService;
         private readonly ILogger<AuthController> _logger;
         private readonly IConfiguration _config;
         private readonly IWebHostEnvironment _env;
 
-        public AuthController(AuthService authService, ILogger<AuthController> logger, IConfiguration configuration, IWebHostEnvironment env)
+        public AuthController(AuthService authService, AuditService auditService, ILogger<AuthController> logger, IConfiguration configuration, IWebHostEnvironment env)
         {
             _authService = authService;
+            _auditService = auditService;
             _logger = logger;
             _config = configuration;
             _env = env;

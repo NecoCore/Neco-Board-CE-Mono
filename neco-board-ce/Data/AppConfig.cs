@@ -122,11 +122,3 @@ namespace neco_board_ce.Data
         }
     }
 }
-eRoles.OWNER
-                });
-
-                await db.SaveChangesAsync();
-            }
-        }
-    }
-}

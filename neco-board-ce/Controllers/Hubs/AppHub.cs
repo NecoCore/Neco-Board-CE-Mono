@@ -99,7 +99,7 @@ namespace neco_board_ce.Controllers.Hubs
                 _logger.LogInformation("Add user {userId} in public group", userId);
                 await Groups.AddToGroupAsync(Context.ConnectionId, HubGroups.All);
 
-                if (Context.User != null && (Context.User.IsInRole(Constants.ROLE_ADMIN) || Context.User.IsInRole(Constants.ROLE_OWNER)))
+                if (Context.User != null && (Context.User.IsInRole(Constants.Roles.Admin) || Context.User.IsInRole(Constants.Roles.Owner)))
                 {
                     _logger.LogInformation("Add user {userId} in admin group", userId);
                     await Groups.AddToGroupAsync(Context.ConnectionId, HubGroups.Admins);
