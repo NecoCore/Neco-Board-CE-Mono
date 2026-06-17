@@ -32,18 +32,21 @@ namespace neco_board_ce.Controllers.API
     {
         private readonly ILogger<TaskColumnController> _logger;
         private readonly ColumnTaskRepository _repository;
+        private readonly ColumnsRepository _columnsRepository;
         private readonly AuditService _auditService;
         private readonly IRealtimeNotifier _notifier;
 
         public TaskColumnController(
-            ILogger<TaskColumnController> logger, 
+            ILogger<TaskColumnController> logger,
             AuditService auditService,
-            ColumnTaskRepository repository, 
+            ColumnTaskRepository repository,
+            ColumnsRepository columnsRepository,
             IRealtimeNotifier notifier)
         {
             _logger = logger;
             _auditService = auditService;
             _repository = repository;
+            _columnsRepository = columnsRepository;
             _notifier = notifier;
         }
 
@@ -167,6 +170,12 @@ namespace neco_board_ce.Controllers.API
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Create([FromBody] TaskColumnRequest dto)
         {
+            var column = await _columnsRepository.GetById(dto.ColumnId);
+            if (!column.Success) return BadRequest(new ErrorMessageResponse { Message = column.Message ?? "Unknown error" });
+            if (column.Data is null) return BadRequest(new ErrorMessageResponse { Message = "Column not found" });
+
+            var projectId = column.Data.ProjectId;
+
             var task = new ColumnTask
             {
                 ColumnId = dto.ColumnId,
@@ -179,8 +188,8 @@ namespace neco_board_ce.Controllers.API
 
             if(result.Success)
             {
-                await _auditService.TaskLog(CurrentProjectId!.Value, UserId!.Value, LogType.CREATED, "Task created", $"Name: {task.Name}, ColumnId: {task.ColumnId}");
-                await _notifier.TaskCreated(CurrentProjectId!.Value, dto.ColumnId);
+                await _auditService.TaskLog(projectId, UserId!.Value, LogType.CREATED, "Task created", $"Name: {dto.Name}, ColumnId: {dto.ColumnId}");
+                await _notifier.TaskCreated(projectId, dto.ColumnId);
                 return Ok();
             }
             return BadRequest(new ErrorMessageResponse { Message = result.Message ?? "Unknown error" });

@@ -6,6 +6,6 @@ namespace neco_board_ce.Models.DTO.Response.Users
     {
         public Guid ProjectId { get; set; }
         public string ProjectName { get; set; } = string.Empty;
-        public List<MyTaskResponse> Tasks = new List<MyTaskResponse>();
+        public List<MyTaskResponse> Tasks { get; set; } = new List<MyTaskResponse>();
     }
 }
